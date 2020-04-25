@@ -1,408 +1,437 @@
-From d8251eb3e39890acd01fd7619382a3f47ed81160 Mon Sep 17 00:00:00 2001
-From: Arnaud GRANAL <arnaud@geometry.ee>
-Date: Wed, 22 Jan 2020 21:50:54 +0000
-Subject: [PATCH] [Kiwi] Introduce extensions support - R80
+From 9a1c00c4a2dff05500dd191f7322ad8bd8191676 Mon Sep 17 00:00:00 2001
+From: Dmitry Valter <dvalter@protonmail.com>
+Date: Sat, 25 Apr 2020 23:18:00 +0300
+Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
+ 80.0.3987.58
 
 ---
- BUILD.gn                                      |   2 +-
- DEPS                                          |   2 +-
- apps/BUILD.gn                                 |   2 +-
- build/config/compiler/compiler.gni            |   6 +-
- chrome/BUILD.gn                               |   4 +-
- .../android/chrome_main_delegate_android.cc   |   7 +
- chrome/app/bookmarks_strings.grdp             |   6 +-
- chrome/app/chrome_main_delegate.cc            |  13 +
- chrome/app/chromium_strings.grd               |  20 +-
- chrome/app/generated_resources.grd            |  77 +-
- chrome/app/google_chrome_strings.grd          |  20 +-
- chrome/app/profiles_strings.grdp              |  11 +-
- chrome/app/theme/theme_resources.grd          |  28 +-
- chrome/browser/BUILD.gn                       |  41 +-
- chrome/browser/apps/platform_apps/BUILD.gn    |   1 -
- .../api/music_manager_private/BUILD.gn        |   1 +
- .../device_id_android.cc                      | 188 ++++
- .../background_contents_service_factory.cc    |   3 +
- .../background/background_mode_manager.cc     |   1 -
- .../background_mode_manager_android.cc        |  24 +
- chrome/browser/browser_process_impl.cc        |   4 +
- chrome/browser/browser_resources.grd          |  29 +-
- chrome/browser/chrome_browser_main.cc         |  22 +
- chrome/browser/chrome_browser_main_android.cc |   2 +
- chrome/browser/chrome_browser_main_posix.cc   |   2 +-
- .../browser/chrome_content_browser_client.cc  |   9 +-
- .../cookie_settings_factory.cc                |   1 +
- .../host_content_settings_map_factory.cc      |   4 +-
- ...ter_protocol_handler_permission_request.cc |  28 +-
- ...ster_protocol_handler_permission_request.h |   2 +
- chrome/browser/devtools/BUILD.gn              |  10 +-
- chrome/browser/download/download_commands.cc  |  17 +-
- chrome/browser/download/download_commands.h   |   4 +-
- .../download/download_crx_util_android.cc     |  23 -
- .../download/download_danger_prompt.cc        |   5 -
- .../download/download_shelf_context_menu.cc   |  17 -
- chrome/browser/download/download_ui_model.cc  |   4 +-
- chrome/browser/download/download_ui_model.h   |   4 +-
- .../download/drag_download_item_android.cc    |  35 +
- .../download/drag_download_item_aura.cc       |   2 +
- .../enterprise_reporting/policy_info.cc       |   2 +
- chrome/browser/extensions/BUILD.gn            |   9 +-
- .../bookmark_manager_private_api.cc           |   5 -
- .../api/browsing_data/browsing_data_api.cc    |  15 +-
- .../content_settings/content_settings_api.cc  |   4 +
- .../chrome_desktop_report_request_helper.cc   |   7 +-
- .../removable_storage_provider_android.cc     |  19 +
- .../device_id_android.cc                      | 184 ++++
- .../resources_private_api.cc                  |   2 +
- .../safe_browsing_private_event_router.cc     |   5 +
- .../api/tabs/windows_event_router.cc          |   2 -
- .../browser/extensions/bookmark_app_helper.cc | 868 ++++++++++++++++++
- .../chrome_extensions_browser_client.cc       |   7 +
- .../chrome_process_manager_delegate.cc        |   1 +
- .../extensions/extension_install_prompt.cc    |  64 ++
- .../extensions/extension_install_prompt.h     |   4 +
- .../extension_install_prompt_show_params.cc   |   4 -
- .../extensions/extension_uninstall_dialog.cc  |   2 +
- .../global_shortcut_listener_android.cc       |  64 ++
- .../global_shortcut_listener_android.h        |  36 +
- .../display_info_provider_android.cc          |  17 +
- .../display_info_provider_android.h           |  24 +
- chrome/browser/first_run/first_run_dialog.h   |   2 +-
- chrome/browser/first_run/upgrade_util.h       |   4 -
- chrome/browser/flag_descriptions.cc           |   2 -
- chrome/browser/flag_descriptions.h            |   2 -
- ...ome_web_view_permission_helper_delegate.cc |   2 +
- ...rome_web_view_permission_helper_delegate.h |   4 +-
- chrome/browser/media/router/BUILD.gn          |   2 +-
- .../browser/media/router/discovery/BUILD.gn   |   4 +-
- chrome/browser/media/router/media_router.h    |   4 +-
- .../browser/media/router/media_router_base.cc |   2 +-
- .../browser/media/router/media_router_base.h  |   4 +-
- .../media/router/media_router_feature.cc      |   6 +-
- .../media/router/media_router_feature.h       |   2 +-
- .../media_capture_devices_dispatcher.cc       |   7 -
- .../metrics/chrome_feature_list_creator.cc    |   6 +
- .../notification_display_service_impl.cc      |  18 -
- .../obsolete_system_android.cc                |  25 +
- .../attestation_permission_request.cc         |  12 +-
- chrome/browser/platform_util.cc               |  42 -
- chrome/browser/platform_util_android.cc       |   4 +
- .../plugins/plugins_resource_service.cc       |   2 +-
- .../browser_dm_token_storage_android.cc       | 191 ++++
- .../policy/browser_dm_token_storage_android.h |  58 ++
- .../policy/chrome_browser_policy_connector.cc |   2 +-
- ...nfiguration_policy_handler_list_factory.cc |   2 +-
- chrome/browser/prefs/browser_prefs.cc         |  50 +-
- .../prefs/chrome_pref_service_factory.cc      |   2 +-
- ...hrome_browser_main_extra_parts_profiles.cc | 114 ++-
- ...chrome_browser_main_extra_parts_profiles.h |   2 +-
- .../profiles/off_the_record_profile_impl.cc   |  11 +-
- .../profiles/off_the_record_profile_impl.h    |  10 +-
- chrome/browser/profiles/profile.cc            |   4 +-
- chrome/browser/profiles/profile.h             |   6 +-
- chrome/browser/profiles/profile_impl.cc       |  11 +-
- chrome/browser/profiles/profile_impl.h        |   6 +-
- chrome/browser/profiles/profile_manager.cc    |   8 +-
- chrome/browser/profiles/profile_manager.h     |   6 +-
- chrome/browser/profiles/profile_metrics.cc    |   8 +-
- chrome/browser/profiles/profile_metrics.h     |   2 +-
- chrome/browser/profiles/profile_window.cc     |   4 +-
- chrome/browser/profiles/profile_window.h      |   4 -
- chrome/browser/profiles/profiles_state.cc     |   4 +-
- chrome/browser/profiles/profiles_state.h      |   2 +-
- .../render_view_context_menu.cc               |  12 +-
- .../render_view_context_menu.h                |   2 +
- .../resource_coordinator_parts.cc             |   4 +-
- .../resource_coordinator_parts.h              |  12 +-
- .../resource_coordinator/tab_helper.cc        |   4 +-
- .../browser/resource_coordinator/tab_helper.h |   4 +-
- .../tab_manager_web_contents_data.cc          |   3 +
- chrome/browser/resources/BUILD.gn             |   6 +-
- .../resources/md_extensions/extensions.html   |  47 +
- chrome/browser/resources/unpack_pak.py        |   4 +
- chrome/browser/search/instant_service.h       |   4 -
- .../browser/search/instant_service_factory.h  |   4 -
- .../browser/search/instant_service_observer.h |   4 -
- chrome/browser/search/local_ntp_source.h      |   4 -
- .../search/most_visited_iframe_source.h       |   4 -
- .../browser/sharing/click_to_call/feature.cc  |   2 +-
- .../browser/sharing/click_to_call/feature.h   |   2 +-
- .../sharing/shared_clipboard/feature_flags.cc |   2 +-
- .../sharing/shared_clipboard/feature_flags.h  |   2 +-
- .../account_consistency_mode_manager.cc       |   6 +-
- chrome/browser/signin/chrome_signin_helper.cc |   2 +-
- chrome/browser/startup_data.cc                |  25 +-
- .../supervised_user_service.cc                |   2 +
- .../sync/profile_sync_service_factory.cc      |  33 +-
- chrome/browser/ui/BUILD.gn                    |  55 +-
- .../ui/bookmarks/bookmark_utils_desktop.cc    |   9 +-
- chrome/browser/ui/browser.cc                  |   7 +-
- chrome/browser/ui/browser.h                   |   2 +
- .../browser/ui/browser_command_controller.cc  |   4 -
- chrome/browser/ui/browser_commands.cc         |   1 -
- ...r_content_setting_bubble_model_delegate.cc |   2 +-
- .../browser/ui/browser_instant_controller.h   |   4 -
- chrome/browser/ui/browser_list.cc             |   3 +-
- chrome/browser/ui/browser_navigator_params.cc |   4 +-
- chrome/browser/ui/browser_navigator_params.h  |   6 +-
- chrome/browser/ui/browser_otr_state.cc        |   4 -
- chrome/browser/ui/browser_ui_prefs.cc         |   2 +-
- chrome/browser/ui/browser_window.h            |   4 -
- chrome/browser/ui/chrome_pages.cc             |   4 +-
- chrome/browser/ui/chrome_pages.h              |   4 +-
- .../content_setting_bubble_model.cc           |   3 +
- .../content_setting_bubble_model.h            |   2 +-
- chrome/browser/ui/fast_unload_controller.cc   | 487 ++++++++++
- .../ui/native_window_tracker_android.cc       |  26 +
- .../ui/native_window_tracker_android.h        |  26 +
- chrome/browser/ui/page_info/page_info_ui.cc   |  10 +-
- chrome/browser/ui/page_info/page_info_ui.h    |   4 +-
- .../settings/password_manager_presenter.cc    |   4 +-
- .../ui/screen_capture_notification_ui_stub.cc |   2 +
- chrome/browser/ui/search/instant_controller.h |   4 -
- .../browser/ui/search/ntp_user_data_logger.h  |   4 -
- chrome/browser/ui/search/search_ipc_router.h  |   4 -
- .../ui/search/search_ipc_router_policy_impl.h |   4 -
- chrome/browser/ui/search/search_tab_helper.h  |   4 -
- chrome/browser/ui/signin_view_controller.h    |   2 +
- chrome/browser/ui/tab_helpers.cc              |   2 +
- chrome/browser/ui/tabs/tab_strip_model.cc     |   4 +
- chrome/browser/ui/tabs/tab_strip_model.h      |   4 -
- .../component_toolbar_actions_factory.cc      |  59 ++
- chrome/browser/ui/unload_controller.cc        |  35 +-
- chrome/browser/ui/views/BUILD.gn              |   2 -
- .../ui/views/accelerator_utils_android.cc     |  30 +
- .../autofill_popup_view_native_views.cc       |  10 +-
- .../browser/ui/views/browser_dialogs_views.cc |  11 -
- .../ui/views/chrome_views_delegate_android.cc |  15 +
- .../desktop_media_list_view.cc                |   2 +-
- .../ui/views/download/download_item_view.cc   |   2 +
- .../ui/views/dropdown_bar_host_android.cc     |  10 +
- chrome/browser/ui/views/find_bar_host.cc      |   4 -
- .../browser/ui/views/frame/browser_frame.cc   |   1 +
- ...ser_non_client_frame_view_factory_views.cc |   1 -
- .../ui/views/frame/browser_root_view.cc       |   8 +-
- chrome/browser/ui/views/frame/browser_view.cc |  21 +-
- .../ui/views/frame/browser_window_factory.cc  |  10 -
- .../frame/desktop_browser_frame_android.cc    |  75 ++
- .../frame/desktop_browser_frame_android.h     |  63 ++
- .../native_browser_frame_factory_android.cc   |  13 +
- .../ui/views/javascript_dialog_views.cc       |   2 +
- .../views/location_bar/location_bar_view.cc   |  25 +-
- .../ui/views/location_bar/location_bar_view.h |   2 +
- .../omnibox/omnibox_popup_contents_view.cc    |   2 +-
- .../permission_prompt_bubble_view.cc          |   2 +
- .../permission_prompt_impl.cc                 |   2 +
- .../ui/views/profiles/avatar_button.cc        | 559 +++++++++++
- .../ui/views/profiles/profile_menu_view.cc    |   2 +
- .../relaunch_notification_controller.cc       |   2 +
- .../password_reuse_modal_warning_dialog.cc    |   8 +
- chrome/browser/ui/views/tabs/tab_strip.cc     |  12 -
- .../ui/views/tabs/window_finder_android.cc    |  15 +
- .../webui/chrome_web_ui_controller_factory.cc |   2 +
- chrome/browser/ui/webui/discards/BUILD.gn     |   2 +-
- .../ui/webui/media_router/media_router_ui.cc  | 716 +++++++++++++++
- .../webui/settings/change_password_handler.cc |  15 -
- .../webui/signin/inline_login_handler_impl.cc |   4 +
- .../ui/window_sizer/window_sizer_android.cc   |  17 +
- .../ui/zoom/chrome_zoom_level_prefs.cc        |  29 +-
- chrome/browser/web_applications/BUILD.gn      |   3 -
- .../web_applications/components/BUILD.gn      |   3 -
- .../components/web_app_shortcut_android.cc    | 122 +++
- .../components/web_app_shortcut_android.h     |  62 ++
- .../web_applications/extensions/BUILD.gn      |   3 -
- .../extensions/web_app_extension_shortcut.cc  |  10 +-
- .../web_applications/web_app_android.cc       |  44 +
- chrome/chrome_paks.gni                        |   2 +-
- chrome/common/BUILD.gn                        |   3 +-
- chrome/common/chrome_features.cc              |  15 +-
- chrome/common/chrome_features.h               |   8 +-
- chrome/common/chrome_paths.cc                 |   2 +-
- chrome/common/chrome_paths.h                  |   2 +-
- chrome/common/chrome_switches.cc              |   2 +-
- chrome/common/chrome_switches.h               |   2 +-
- chrome/common/extensions/api/api_sources.gni  |   2 +-
- chrome/common/features.gni                    |   4 +-
- chrome/common/pref_names.cc                   |  26 +-
- chrome/common/pref_names.h                    |  26 +-
- chrome/common/url_constants.cc                |   4 +-
- chrome/common/url_constants.h                 |   4 +-
- chrome/common/webui_url_constants.cc          |   4 +-
- chrome/common/webui_url_constants.h           |   4 +-
- .../chrome_content_renderer_client.cc         |   2 +-
- chrome/renderer/media/chrome_key_systems.cc   |   2 +-
- chrome/test/BUILD.gn                          |   2 +-
- chromecast/browser/cast_browser_context.cc    |   2 +-
- chromecast/browser/cast_browser_context.h     |   2 +-
- components/autofill_payments_strings.grdp     |  12 +-
- components/autofill_strings.grdp              |   2 +-
- components/bookmarks/browser/BUILD.gn         |   2 +-
- .../bookmarks/browser/bookmark_node_data.h    |   8 +-
- components/components_strings.grd             |   4 +-
- .../core/browser/cookie_settings.cc           |   1 +
- .../public/event_constants.cc                 |   4 +-
- .../public/event_constants.h                  |   4 +-
- .../public/feature_constants.cc               |   2 +-
- .../public/feature_constants.h                |   2 +-
- components/guest_view/browser/BUILD.gn        |   2 +-
- components/guest_view/renderer/BUILD.gn       |   2 +-
- components/history_strings.grdp               |   2 +-
- components/keep_alive_registry/BUILD.gn       |   2 +-
- components/new_or_sad_tab_strings.grdp        |   2 +-
- components/page_info_strings.grdp             |  10 +-
- .../payments/content/payment_request.cc       |   2 +-
- components/payments/content/payment_request.h |   2 +-
- components/payments_strings.grdp              |   2 +-
- components/pdf_strings.grdp                   |   2 +-
- .../browser/configuration_policy_handler.cc   |   1 +
- .../policy/resources/policy_templates.json    |  10 +-
- components/prefs/pref_service.cc              |   4 +
- components/search/search.cc                   |   4 -
- components/signin/features.gni                |   2 +-
- components/sync_ui_strings.grdp               |   2 +-
- components/ui_devtools/views/BUILD.gn         |   7 +
- .../ui_devtools/views/dom_agent_android.cc    |  44 +
- .../ui_devtools/views/dom_agent_android.h     |  32 +
- .../views/overlay_agent_android.cc            |  44 +
- .../ui_devtools/views/overlay_agent_android.h |  36 +
- .../ui_devtools/views/overlay_agent_views.cc  |   4 -
- components/url_formatter/elide_url.cc         |   4 +-
- components/url_formatter/elide_url.h          |   2 +-
- components/web_modal/BUILD.gn                 |   2 +-
- components/zoom/BUILD.gn                      |   2 +-
- content/app/content_main_runner_impl.cc       |  33 +
- .../content_service_manager_main_delegate.cc  |   2 +
- content/browser/BUILD.gn                      |  16 +-
- content/browser/browser_main.cc               |   4 +
- content/browser/browser_main_loop.cc          |  28 +
- content/browser/browser_main_runner_impl.cc   |   3 +
- .../gpu_process_transport_factory.cc          |   8 -
- content/browser/devtools/BUILD.gn             |   2 +-
- .../frame_host/navigation_controller_impl.cc  |   4 +
- .../browser/frame_host/navigation_request.cc  |   2 +
- .../pepper/pepper_truetype_font_android.cc    |  78 ++
- .../pepper_truetype_font_list_android.cc      |  20 +
- .../renderer_host/render_view_host_impl.cc    |   6 +-
- content/browser/storage_partition_impl.cc     |   5 +-
- content/browser/storage_partition_impl.h      |   6 +-
- .../browser/web_contents/web_contents_impl.cc |   8 +-
- .../browser/web_contents/web_contents_impl.h  |   6 +-
- .../webui/shared_resources_data_source.cc     |   6 +-
- content/public/browser/browser_context.h      |   4 +-
- .../public/browser/content_browser_client.cc  |   2 +-
- .../public/browser/content_browser_client.h   |   2 +-
- content/public/browser/desktop_media_id.cc    |   4 +-
- content/public/browser/desktop_media_id.h     |   2 +-
- content/public/browser/storage_partition.h    |   4 +-
- content/public/common/pepper_plugin_info.h    |   2 +
- content/shell/BUILD.gn                        |   2 +-
- .../shell/browser/shell_browser_context.cc    |   2 +-
- content/shell/browser/shell_browser_context.h |   4 +-
- extensions/BUILD.gn                           |  36 -
- extensions/browser/api/api_resource_manager.h |   8 +
- .../browser/api/messaging/message_service.cc  |   2 +-
- extensions/browser/api/socket/tcp_socket.cc   | 104 +--
- extensions/browser/api/socket/tcp_socket.h    |   2 -
- extensions/browser/api/system_cpu/BUILD.gn    |   1 +
- .../system_cpu/cpu_info_provider_android.cc   |  77 ++
- .../browser/extensions_browser_client.cc      |   1 +
- .../guest_view/web_view/web_view_guest.cc     |   1 +
- extensions/buildflags/buildflags.gni          |   2 +-
- google_apis/BUILD.gn                          |   2 +-
- mojo/public/js/mojo_bindings_resources.grd    |   2 +-
- services/device/public/cpp/hid/BUILD.gn       |   2 +-
- services/service_manager/embedder/main.cc     |  27 +
- services/tracing/public/cpp/trace_startup.cc  |   4 +
- third_party/blink/public/mojom/BUILD.gn       |   2 +-
- ui/android/window_android.h                   |   8 +
- ui/base/BUILD.gn                              |  17 +-
- ui/base/cursor/cursor.cc                      |   2 +-
- ui/base/dragdrop/os_exchange_data.cc          |   4 +-
- ui/base/dragdrop/os_exchange_data.h           |   8 +-
- .../os_exchange_data_provider_android.cc      | 220 +++++
- .../os_exchange_data_provider_android.h       | 101 ++
- .../os_exchange_data_provider_factory.cc      |   4 +-
- ui/events/event.h                             |   1 +
- ui/gfx/BUILD.gn                               |   7 -
- ui/message_center/BUILD.gn                    |   4 +-
- ui/native_theme/native_theme_android.cc       |   3 +-
- ui/native_theme/native_theme_android.h        |   2 +-
- ui/resources/BUILD.gn                         |   4 +-
- ui/resources/ui_resources.grd                 |   8 +-
- ui/views/BUILD.gn                             |  19 +-
- ui/views/controls/menu/menu_config_android.cc |  13 +
- ui/views/controls/menu/menu_controller.cc     |  69 --
- ui/views/controls/menu/menu_host.cc           |  42 -
- ui/views/controls/menu/menu_host.h            |   5 -
- .../native/native_view_host_android.cc        | 121 +++
- .../native/native_view_host_android.h         |  98 ++
- .../unhandled_keyboard_event_handler.cc       |   3 -
- ...nhandled_keyboard_event_handler_default.cc |   2 +-
- ui/views/controls/webview/web_dialog_view.cc  |   6 +-
- ui/views/event_monitor_android.cc             |  65 ++
- ui/views/event_monitor_android.h              |  37 +
- ui/views/metrics_android.cc                   |  36 +
- ui/views/native_cursor_android.cc             |  31 +
- ui/views/view.cc                              |   2 +
- ...ch_selection_controller_factory_android.cc |  22 +
- ...touch_selection_controller_factory_aura.cc |   2 +-
- ui/views/widget/native_widget_android.cc      | 491 ++++++++++
- ui/views/widget/native_widget_android.h       | 192 ++++
- ui/views/widget/widget.cc                     | 113 +--
- ui/webui/resources/css/roboto.css             |   2 +-
- ui/webui/resources/webui_resources.grd        |   6 +-
- 346 files changed, 7037 insertions(+), 1291 deletions(-)
- create mode 100644 chrome/browser/apps/platform_apps/api/music_manager_private/device_id_android.cc
- create mode 100644 chrome/browser/background/background_mode_manager_android.cc
- delete mode 100644 chrome/browser/download/download_crx_util_android.cc
- create mode 100644 chrome/browser/download/drag_download_item_android.cc
- create mode 100644 chrome/browser/extensions/api/image_writer_private/removable_storage_provider_android.cc
- create mode 100644 chrome/browser/extensions/api/music_manager_private/device_id_android.cc
- create mode 100644 chrome/browser/extensions/bookmark_app_helper.cc
- create mode 100644 chrome/browser/extensions/global_shortcut_listener_android.cc
- create mode 100644 chrome/browser/extensions/global_shortcut_listener_android.h
- create mode 100644 chrome/browser/extensions/system_display/display_info_provider_android.cc
- create mode 100644 chrome/browser/extensions/system_display/display_info_provider_android.h
- create mode 100644 chrome/browser/obsolete_system/obsolete_system_android.cc
- create mode 100644 chrome/browser/policy/browser_dm_token_storage_android.cc
- create mode 100644 chrome/browser/policy/browser_dm_token_storage_android.h
- create mode 100644 chrome/browser/resources/md_extensions/extensions.html
- create mode 100644 chrome/browser/ui/fast_unload_controller.cc
- create mode 100644 chrome/browser/ui/native_window_tracker_android.cc
- create mode 100644 chrome/browser/ui/native_window_tracker_android.h
- create mode 100644 chrome/browser/ui/toolbar/component_toolbar_actions_factory.cc
- create mode 100644 chrome/browser/ui/views/accelerator_utils_android.cc
- create mode 100644 chrome/browser/ui/views/chrome_views_delegate_android.cc
- create mode 100644 chrome/browser/ui/views/dropdown_bar_host_android.cc
- create mode 100644 chrome/browser/ui/views/frame/desktop_browser_frame_android.cc
- create mode 100644 chrome/browser/ui/views/frame/desktop_browser_frame_android.h
- create mode 100644 chrome/browser/ui/views/frame/native_browser_frame_factory_android.cc
- create mode 100644 chrome/browser/ui/views/profiles/avatar_button.cc
- create mode 100644 chrome/browser/ui/views/tabs/window_finder_android.cc
- create mode 100644 chrome/browser/ui/webui/media_router/media_router_ui.cc
- create mode 100644 chrome/browser/ui/window_sizer/window_sizer_android.cc
- create mode 100644 chrome/browser/web_applications/components/web_app_shortcut_android.cc
- create mode 100644 chrome/browser/web_applications/components/web_app_shortcut_android.h
- create mode 100644 chrome/browser/web_applications/web_app_android.cc
- create mode 100644 components/ui_devtools/views/dom_agent_android.cc
- create mode 100644 components/ui_devtools/views/dom_agent_android.h
- create mode 100644 components/ui_devtools/views/overlay_agent_android.cc
- create mode 100644 components/ui_devtools/views/overlay_agent_android.h
- create mode 100644 content/browser/renderer_host/pepper/pepper_truetype_font_android.cc
- create mode 100644 content/browser/renderer_host/pepper/pepper_truetype_font_list_android.cc
- create mode 100644 extensions/browser/api/system_cpu/cpu_info_provider_android.cc
- create mode 100644 ui/base/dragdrop/os_exchange_data_provider_android.cc
- create mode 100644 ui/base/dragdrop/os_exchange_data_provider_android.h
- create mode 100644 ui/views/controls/menu/menu_config_android.cc
- create mode 100644 ui/views/controls/native/native_view_host_android.cc
- create mode 100644 ui/views/controls/native/native_view_host_android.h
- create mode 100644 ui/views/event_monitor_android.cc
- create mode 100644 ui/views/event_monitor_android.h
- create mode 100644 ui/views/metrics_android.cc
- create mode 100644 ui/views/native_cursor_android.cc
- create mode 100644 ui/views/views_touch_selection_controller_factory_android.cc
- create mode 100644 ui/views/widget/native_widget_android.cc
- create mode 100644 ui/views/widget/native_widget_android.h
+ AUTHORS                                            |   2 +
+ BUILD.gn                                           |   2 +-
+ DEPS                                               |   2 +-
+ GN_ARGS                                            |  45 ++
+ apps/BUILD.gn                                      |   2 +-
+ build/config/compiler/BUILD.gn                     |   4 +-
+ build/config/compiler/compiler.gni                 |   6 +-
+ chrome/BUILD.gn                                    |   4 +-
+ .../chrome/browser/ChromeTabbedActivity.java       |   2 +
+ chrome/app/android/chrome_main_delegate_android.cc |  11 +-
+ chrome/app/bookmarks_strings.grdp                  |   6 +-
+ chrome/app/chrome_main_delegate.cc                 |  13 +
+ chrome/app/chromium_strings.grd                    |  20 +-
+ chrome/app/generated_resources.grd                 |  77 +-
+ chrome/app/google_chrome_strings.grd               |  20 +-
+ chrome/app/profiles_strings.grdp                   |  11 +-
+ chrome/app/theme/theme_resources.grd               |  28 +-
+ chrome/browser/BUILD.gn                            |  49 +-
+ chrome/browser/apps/platform_apps/BUILD.gn         |   1 -
+ .../api/music_manager_private/BUILD.gn             |   1 +
+ .../api/music_manager_private/device_id_android.cc | 188 +++++
+ .../background_contents_service_factory.cc         |   3 +
+ .../browser/background/background_mode_manager.cc  |   1 -
+ .../background/background_mode_manager_android.cc  |  24 +
+ chrome/browser/browser_process_impl.cc             |   4 +
+ chrome/browser/browser_resources.grd               |  29 +-
+ .../browser_switcher/browser_switcher_service.cc   |   3 +-
+ chrome/browser/chrome_browser_main.cc              |  22 +
+ chrome/browser/chrome_browser_main_android.cc      |   2 +
+ chrome/browser/chrome_browser_main_posix.cc        |   2 +-
+ chrome/browser/chrome_content_browser_client.cc    |   9 +-
+ .../content_settings/cookie_settings_factory.cc    |   1 +
+ .../host_content_settings_map_factory.cc           |   4 +-
+ ...register_protocol_handler_permission_request.cc |  28 +-
+ .../register_protocol_handler_permission_request.h |   2 +
+ chrome/browser/devtools/BUILD.gn                   |  10 +-
+ chrome/browser/devtools/devtools_ui_bindings.cc    |   4 +
+ chrome/browser/download/download_commands.cc       |  17 +-
+ chrome/browser/download/download_commands.h        |   4 +-
+ .../browser/download/download_crx_util_android.cc  |  23 -
+ chrome/browser/download/download_danger_prompt.cc  |   5 -
+ .../download/download_shelf_context_menu.cc        |  17 -
+ chrome/browser/download/download_ui_model.cc       |   4 +-
+ chrome/browser/download/download_ui_model.h        |   4 +-
+ .../browser/download/drag_download_item_android.cc |  35 +
+ chrome/browser/download/drag_download_item_aura.cc |   2 +
+ chrome/browser/enterprise_reporting/policy_info.cc |   2 +
+ chrome/browser/extensions/BUILD.gn                 |   7 +-
+ .../bookmark_manager_private_api.cc                |   5 -
+ .../api/browsing_data/browsing_data_api.cc         |  15 +-
+ .../api/content_settings/content_settings_api.cc   |   4 +
+ .../chrome_desktop_report_request_helper.cc        |   7 +-
+ .../removable_storage_provider_android.cc          |  19 +
+ .../api/music_manager_private/device_id_android.cc | 184 +++++
+ .../networking_private_ui_delegate_factory_impl.cc |   3 +
+ .../api/resources_private/resources_private_api.cc |   2 +
+ .../safe_browsing_private_event_router.cc          |   5 +
+ .../extensions/api/tabs/windows_event_router.cc    |   2 -
+ chrome/browser/extensions/bookmark_app_helper.cc   | 868 +++++++++++++++++++++
+ .../extensions/chrome_extensions_browser_client.cc |   7 +
+ .../extensions/chrome_process_manager_delegate.cc  |   1 +
+ .../browser/extensions/extension_install_prompt.cc |  64 ++
+ .../browser/extensions/extension_install_prompt.h  |   4 +
+ .../extension_install_prompt_show_params.cc        |   4 -
+ .../extensions/extension_uninstall_dialog.cc       |   2 +
+ .../extensions/global_shortcut_listener_android.cc |  64 ++
+ .../extensions/global_shortcut_listener_android.h  |  36 +
+ .../display_info_provider_android.cc               |  17 +
+ .../system_display/display_info_provider_android.h |  24 +
+ chrome/browser/first_run/first_run_dialog.h        |   2 +-
+ .../first_run/first_run_internal_android.cc        |  24 +
+ .../browser/first_run/first_run_internal_posix.cc  |   2 +-
+ chrome/browser/first_run/upgrade_util.cc           |   2 +-
+ chrome/browser/first_run/upgrade_util.h            |   4 -
+ chrome/browser/flag_descriptions.cc                |   2 -
+ chrome/browser/flag_descriptions.h                 |   2 -
+ .../chrome_web_view_permission_helper_delegate.cc  |   2 +
+ .../chrome_web_view_permission_helper_delegate.h   |   4 +-
+ chrome/browser/media/router/BUILD.gn               |   2 +-
+ chrome/browser/media/router/discovery/BUILD.gn     |   4 +-
+ .../discovery/dial/dial_media_sink_service_impl.cc |  10 +-
+ .../router/discovery/discovery_network_monitor.cc  |   4 +-
+ .../discovery/mdns/cast_media_sink_service_impl.cc |  20 +-
+ chrome/browser/media/router/media_router.h         |   4 +-
+ chrome/browser/media/router/media_router_base.cc   |   2 +-
+ chrome/browser/media/router/media_router_base.h    |   4 +-
+ .../browser/media/router/media_router_feature.cc   |   6 +-
+ chrome/browser/media/router/media_router_feature.h |   2 +-
+ .../router/providers/cast/cast_activity_manager.cc |  30 +-
+ .../router/providers/cast/cast_activity_record.cc  |   4 +-
+ .../cast/cast_app_availability_tracker.cc          |   4 +-
+ .../providers/cast/cast_app_discovery_service.cc   |   4 +
+ .../providers/cast/cast_media_route_provider.cc    |  11 +-
+ .../providers/cast/mirroring_activity_record.cc    |   2 +-
+ .../webrtc/media_capture_devices_dispatcher.cc     |   7 -
+ .../browser/metrics/chrome_feature_list_creator.cc |   6 +
+ .../fullscreen_notification_blocker.cc             |   2 +-
+ .../notification_display_service_impl.cc           |  18 -
+ .../obsolete_system/obsolete_system_android.cc     |  25 +
+ .../permissions/attestation_permission_request.cc  |  12 +-
+ chrome/browser/platform_util.cc                    |  42 -
+ chrome/browser/platform_util_android.cc            |   4 +
+ chrome/browser/plugins/plugins_resource_service.cc |   2 +-
+ chrome/browser/policy/BUILD.gn                     |   1 +
+ .../policy/browser_dm_token_storage_android.cc     | 191 +++++
+ .../policy/browser_dm_token_storage_android.h      |  58 ++
+ .../policy/chrome_browser_policy_connector.cc      |   2 +-
+ .../configuration_policy_handler_list_factory.cc   |   2 +-
+ .../browser/policy/policy_path_parser_android.cc   |  71 ++
+ chrome/browser/prefs/browser_prefs.cc              |  50 +-
+ .../browser/prefs/chrome_pref_service_factory.cc   |   2 +-
+ .../chrome_browser_main_extra_parts_profiles.cc    | 114 ++-
+ .../chrome_browser_main_extra_parts_profiles.h     |   2 +-
+ .../profiles/off_the_record_profile_impl.cc        |  11 +-
+ .../browser/profiles/off_the_record_profile_impl.h |  10 +-
+ chrome/browser/profiles/profile.cc                 |   4 +-
+ chrome/browser/profiles/profile.h                  |   6 +-
+ chrome/browser/profiles/profile_impl.cc            |  11 +-
+ chrome/browser/profiles/profile_impl.h             |   6 +-
+ chrome/browser/profiles/profile_manager.cc         |  12 +-
+ chrome/browser/profiles/profile_manager.h          |   6 +-
+ chrome/browser/profiles/profile_metrics.cc         |   8 +-
+ chrome/browser/profiles/profile_metrics.h          |   2 +-
+ chrome/browser/profiles/profile_window.cc          |   4 +-
+ chrome/browser/profiles/profile_window.h           |   4 -
+ chrome/browser/profiles/profiles_state.cc          |   4 +-
+ chrome/browser/profiles/profiles_state.h           |   2 +-
+ .../render_view_context_menu.cc                    |  12 +-
+ .../render_view_context_menu.h                     |   2 +
+ .../resource_coordinator_parts.cc                  |   4 +-
+ .../resource_coordinator_parts.h                   |  12 +-
+ chrome/browser/resource_coordinator/tab_helper.cc  |   4 +-
+ chrome/browser/resource_coordinator/tab_helper.h   |   4 +-
+ .../tab_manager_web_contents_data.cc               |   3 +
+ chrome/browser/resources/BUILD.gn                  |   6 +-
+ .../resources/md_extensions/extensions.html        |  47 ++
+ chrome/browser/resources/unpack_pak.py             |   4 +
+ chrome/browser/search/instant_service.h            |   4 -
+ chrome/browser/search/instant_service_factory.h    |   4 -
+ chrome/browser/search/instant_service_observer.h   |   4 -
+ chrome/browser/search/local_ntp_source.h           |   4 -
+ chrome/browser/search/most_visited_iframe_source.h |   4 -
+ chrome/browser/sharing/click_to_call/feature.cc    |   2 +-
+ chrome/browser/sharing/click_to_call/feature.h     |   2 +-
+ .../sharing/shared_clipboard/feature_flags.cc      |   2 +-
+ .../sharing/shared_clipboard/feature_flags.h       |   2 +-
+ .../signin/account_consistency_mode_manager.cc     |   6 +-
+ chrome/browser/signin/chrome_signin_helper.cc      |   2 +-
+ .../spellchecker/spelling_service_client.cc        | 343 ++++++++
+ chrome/browser/startup_data.cc                     |  25 +-
+ .../supervised_user/supervised_user_service.cc     |   2 +
+ .../browser/sync/profile_sync_service_factory.cc   |  33 +-
+ chrome/browser/touch_to_fill/android/BUILD.gn      |   1 +
+ chrome/browser/ui/BUILD.gn                         | 102 +--
+ .../browser/ui/bookmarks/bookmark_utils_desktop.cc |   9 +-
+ chrome/browser/ui/browser.cc                       |  10 +-
+ chrome/browser/ui/browser.h                        |   2 +
+ chrome/browser/ui/browser_command_controller.cc    |   4 -
+ chrome/browser/ui/browser_commands.cc              |   1 -
+ ...rowser_content_setting_bubble_model_delegate.cc |   2 +-
+ chrome/browser/ui/browser_instant_controller.h     |   4 -
+ chrome/browser/ui/browser_list.cc                  |   3 +-
+ chrome/browser/ui/browser_navigator_params.cc      |   4 +-
+ chrome/browser/ui/browser_navigator_params.h       |   6 +-
+ chrome/browser/ui/browser_otr_state.cc             |   4 -
+ chrome/browser/ui/browser_ui_prefs.cc              |   2 +-
+ chrome/browser/ui/browser_window.h                 |   4 -
+ chrome/browser/ui/chrome_pages.cc                  |   4 +-
+ chrome/browser/ui/chrome_pages.h                   |   4 +-
+ .../content_setting_bubble_model.cc                |   3 +
+ .../content_setting_bubble_model.h                 |   2 +-
+ .../ui/exclusive_access/fullscreen_controller.cc   |   4 +
+ .../ui/extensions/extension_install_ui_default.cc  |   2 +
+ chrome/browser/ui/fast_unload_controller.cc        | 487 ++++++++++++
+ chrome/browser/ui/native_window_tracker_android.cc |  26 +
+ chrome/browser/ui/native_window_tracker_android.h  |  26 +
+ chrome/browser/ui/page_info/page_info_ui.cc        |  10 +-
+ chrome/browser/ui/page_info/page_info_ui.h         |   4 +-
+ .../ui/passwords/manage_passwords_view_utils.cc    |   4 +-
+ .../ui/passwords/manage_passwords_view_utils.h     |   1 +
+ .../settings/password_manager_presenter.cc         |   4 +-
+ .../ui/screen_capture_notification_ui_stub.cc      |   2 +
+ chrome/browser/ui/search/instant_controller.h      |   4 -
+ chrome/browser/ui/search/ntp_user_data_logger.h    |   4 -
+ chrome/browser/ui/search/search_ipc_router.h       |   4 -
+ .../ui/search/search_ipc_router_policy_impl.h      |   4 -
+ chrome/browser/ui/search/search_tab_helper.h       |   4 -
+ chrome/browser/ui/signin_view_controller.h         |   2 +
+ .../chrome_web_contents_view_handle_drop.cc        |   2 +
+ chrome/browser/ui/tab_helpers.cc                   |   2 +
+ chrome/browser/ui/tabs/tab_strip_model.cc          |  19 +-
+ chrome/browser/ui/tabs/tab_strip_model.h           |   4 -
+ .../toolbar/component_toolbar_actions_factory.cc   |  59 ++
+ chrome/browser/ui/unload_controller.cc             |  35 +-
+ chrome/browser/ui/views/BUILD.gn                   |   2 -
+ .../browser/ui/views/accelerator_utils_android.cc  |  30 +
+ .../autofill/autofill_popup_view_native_views.cc   |  10 +-
+ .../ui/views/bookmarks/bookmark_drag_drop_views.cc |   3 +-
+ chrome/browser/ui/views/browser_dialogs_views.cc   |  11 -
+ .../ui/views/chrome_views_delegate_android.cc      |  15 +
+ .../desktop_capture/desktop_media_list_view.cc     |   2 +-
+ .../desktop_capture/desktop_media_picker_views.cc  |   3 +-
+ .../ui/views/download/download_item_view.cc        |   2 +
+ .../browser/ui/views/dropdown_bar_host_android.cc  |  10 +
+ chrome/browser/ui/views/find_bar_host.cc           |   4 -
+ chrome/browser/ui/views/frame/browser_frame.cc     |   3 +
+ .../browser_non_client_frame_view_factory_views.cc |   1 -
+ chrome/browser/ui/views/frame/browser_root_view.cc |   8 +-
+ chrome/browser/ui/views/frame/browser_view.cc      |  21 +-
+ .../ui/views/frame/browser_window_factory.cc       |  10 -
+ .../views/frame/desktop_browser_frame_android.cc   |  75 ++
+ .../ui/views/frame/desktop_browser_frame_android.h |  63 ++
+ .../frame/native_browser_frame_factory_android.cc  |  13 +
+ chrome/browser/ui/views/javascript_dialog_views.cc |   2 +
+ .../ui/views/location_bar/location_bar_view.cc     |  25 +-
+ .../ui/views/location_bar/location_bar_view.h      |   2 +
+ .../views/omnibox/omnibox_popup_contents_view.cc   |   2 +-
+ .../permission_prompt_bubble_view.cc               |   2 +
+ .../permission_bubble/permission_prompt_impl.cc    |   2 +
+ chrome/browser/ui/views/profiles/avatar_button.cc  | 559 +++++++++++++
+ .../browser/ui/views/profiles/profile_menu_view.cc |   2 +
+ .../relaunch_notification_controller.cc            |   2 +
+ .../password_reuse_modal_warning_dialog.cc         |   8 +
+ chrome/browser/ui/views/tabs/tab_strip.cc          |  12 -
+ .../browser/ui/views/tabs/window_finder_android.cc |  15 +
+ .../ui/webui/chrome_web_ui_controller_factory.cc   |   2 +
+ chrome/browser/ui/webui/devtools_ui_data_source.cc |   2 +
+ chrome/browser/ui/webui/discards/BUILD.gn          |   2 +-
+ .../ui/webui/media_router/media_router_ui.cc       | 716 +++++++++++++++++
+ chrome/browser/ui/webui/settings/about_handler.cc  |   2 +
+ .../ui/webui/settings/change_password_handler.cc   |  15 -
+ .../browser/ui/webui/settings/printing_handler.cc  |   2 +
+ .../ui/webui/settings/safety_check_handler.cc      |   2 +
+ .../settings_localized_strings_provider.cc         |   3 +-
+ chrome/browser/ui/webui/settings/system_handler.cc |   2 +-
+ .../ui/webui/signin/inline_login_handler_impl.cc   |   4 +
+ .../ui/window_sizer/window_sizer_android.cc        |  17 +
+ chrome/browser/ui/zoom/chrome_zoom_level_prefs.cc  |  29 +-
+ chrome/browser/web_applications/BUILD.gn           |   3 -
+ .../browser/web_applications/components/BUILD.gn   |  11 +-
+ .../components/web_app_shortcut_android.cc         | 122 +++
+ .../components/web_app_shortcut_android.h          |  62 ++
+ .../browser/web_applications/extensions/BUILD.gn   |   3 -
+ .../extensions/web_app_extension_shortcut.cc       |  10 +-
+ chrome/browser/web_applications/web_app_android.cc |  44 ++
+ chrome/chrome_paks.gni                             |  38 +-
+ chrome/common/BUILD.gn                             |   3 +-
+ chrome/common/chrome_features.cc                   |  15 +-
+ chrome/common/chrome_features.h                    |   8 +-
+ chrome/common/chrome_paths.cc                      |   2 +-
+ chrome/common/chrome_paths.h                       |   2 +-
+ chrome/common/chrome_switches.cc                   |   2 +-
+ chrome/common/chrome_switches.h                    |   2 +-
+ chrome/common/extensions/api/api_sources.gni       |   2 +-
+ chrome/common/features.gni                         |   4 +-
+ chrome/common/importer/BUILD.gn                    |   1 +
+ .../importer/firefox_importer_utils_android.cc     |  25 +
+ chrome/common/media_router/BUILD.gn                |   2 +-
+ chrome/common/pref_names.cc                        |  26 +-
+ chrome/common/pref_names.h                         |  26 +-
+ chrome/common/url_constants.cc                     |   4 +-
+ chrome/common/url_constants.h                      |   4 +-
+ chrome/common/webui_url_constants.cc               |   4 +-
+ chrome/common/webui_url_constants.h                |   4 +-
+ chrome/renderer/BUILD.gn                           |  20 +-
+ chrome/renderer/chrome_content_renderer_client.cc  |   4 +-
+ chrome/renderer/content_settings_agent_impl.cc     |   3 +-
+ chrome/renderer/media/chrome_key_systems.cc        |   2 +-
+ chrome/test/BUILD.gn                               |   2 +-
+ chromecast/browser/cast_browser_context.cc         |   2 +-
+ chromecast/browser/cast_browser_context.h          |   2 +-
+ components/BUILD.gn                                |   2 +-
+ components/autofill_payments_strings.grdp          |  12 +-
+ components/autofill_strings.grdp                   |   2 +-
+ components/bookmarks/browser/BUILD.gn              |   2 +-
+ components/bookmarks/browser/bookmark_node_data.h  |   8 +-
+ components/components_strings.grd                  |   4 +-
+ .../core/browser/cookie_settings.cc                |   1 +
+ .../feature_engagement/public/event_constants.cc   |   4 +-
+ .../feature_engagement/public/event_constants.h    |   4 +-
+ .../feature_engagement/public/feature_constants.cc |   2 +-
+ .../feature_engagement/public/feature_constants.h  |   2 +-
+ components/guest_view/browser/BUILD.gn             |   2 +-
+ components/guest_view/renderer/BUILD.gn            |   2 +-
+ components/history_strings.grdp                    |   2 +-
+ components/keep_alive_registry/BUILD.gn            |   2 +-
+ components/new_or_sad_tab_strings.grdp             |   2 +-
+ components/page_info_strings.grdp                  |  10 +-
+ components/payments/content/payment_request.cc     |   2 +-
+ components/payments/content/payment_request.h      |   2 +-
+ components/payments_strings.grdp                   |   2 +-
+ components/pdf/renderer/BUILD.gn                   |   2 +-
+ components/pdf_strings.grdp                        |   2 +-
+ .../core/browser/configuration_policy_handler.cc   |   1 +
+ components/policy/resources/policy_templates.json  |  10 +-
+ components/prefs/pref_service.cc                   |   4 +
+ components/search/search.cc                        |   4 -
+ components/signin/features.gni                     |   2 +-
+ components/storage_monitor/storage_monitor.cc      |   4 +-
+ components/sync_ui_strings.grdp                    |   2 +-
+ components/ui_devtools/views/BUILD.gn              |   7 +
+ components/ui_devtools/views/dom_agent_android.cc  |  44 ++
+ components/ui_devtools/views/dom_agent_android.h   |  32 +
+ .../ui_devtools/views/overlay_agent_android.cc     |  44 ++
+ .../ui_devtools/views/overlay_agent_android.h      |  36 +
+ .../ui_devtools/views/overlay_agent_views.cc       |   4 -
+ components/url_formatter/elide_url.cc              |   4 +-
+ components/url_formatter/elide_url.h               |   2 +-
+ components/web_modal/BUILD.gn                      |   2 +-
+ components/zoom/BUILD.gn                           |   2 +-
+ content/app/content_main_runner_impl.cc            |  33 +
+ .../app/content_service_manager_main_delegate.cc   |   2 +
+ content/browser/BUILD.gn                           |  16 +-
+ content/browser/browser_main.cc                    |   4 +
+ content/browser/browser_main_loop.cc               |  28 +
+ content/browser/browser_main_runner_impl.cc        |   3 +
+ .../compositor/gpu_process_transport_factory.cc    |   8 -
+ content/browser/devtools/BUILD.gn                  |   2 +-
+ .../frame_host/navigation_controller_impl.cc       |   4 +
+ content/browser/frame_host/navigation_request.cc   |   2 +
+ .../pepper/pepper_truetype_font_android.cc         |  78 ++
+ .../pepper/pepper_truetype_font_list_android.cc    |  20 +
+ .../browser/renderer_host/render_view_host_impl.cc |   6 +-
+ content/browser/storage_partition_impl.cc          |   5 +-
+ content/browser/storage_partition_impl.h           |   6 +-
+ content/browser/web_contents/web_contents_impl.cc  |   8 +-
+ content/browser/web_contents/web_contents_impl.h   |   6 +-
+ .../browser/webui/shared_resources_data_source.cc  |   6 +-
+ content/child/child_process.cc                     |   5 +
+ content/public/browser/browser_context.h           |   4 +-
+ content/public/browser/content_browser_client.cc   |   2 +-
+ content/public/browser/content_browser_client.h    |   2 +-
+ content/public/browser/desktop_media_id.cc         |   4 +-
+ content/public/browser/desktop_media_id.h          |   2 +-
+ content/public/browser/storage_partition.h         |   4 +-
+ content/public/common/pepper_plugin_info.h         |   2 +
+ content/shell/BUILD.gn                             |   2 +-
+ content/shell/browser/shell_browser_context.cc     |   2 +-
+ content/shell/browser/shell_browser_context.h      |   4 +-
+ extensions/BUILD.gn                                |  36 -
+ extensions/browser/api/BUILD.gn                    |   2 +-
+ extensions/browser/api/api_resource_manager.h      |   8 +
+ .../browser/api/messaging/message_service.cc       |   2 +-
+ extensions/browser/api/socket/tcp_socket.cc        | 104 +--
+ extensions/browser/api/socket/tcp_socket.h         |   2 -
+ extensions/browser/api/system_cpu/BUILD.gn         |   1 +
+ .../api/system_cpu/cpu_info_provider_android.cc    |  77 ++
+ extensions/browser/extensions_browser_client.cc    |   1 +
+ .../browser/guest_view/web_view/web_view_guest.cc  |   1 +
+ extensions/buildflags/buildflags.gni               |   2 +-
+ google_apis/BUILD.gn                               |   2 +-
+ mojo/public/js/mojo_bindings_resources.grd         |   2 +-
+ net/url_request/url_request_http_job.cc            |   4 +
+ services/device/public/cpp/hid/BUILD.gn            |   2 +-
+ services/service_manager/embedder/main.cc          |  27 +
+ .../public/cpp/perfetto/perfetto_traced_process.cc |   5 +
+ services/tracing/public/cpp/trace_startup.cc       |   4 +
+ third_party/blink/public/mojom/BUILD.gn            |   2 +-
+ third_party/libavif/src                            |   1 +
+ third_party/libgav1/src                            |   1 +
+ third_party/pywebsocket3/src                       |   1 +
+ third_party/sqlite/src                             |   1 +
+ third_party/turbine/src                            |   1 +
+ third_party/webgpu-cts/src                         |   1 +
+ third_party/weston/src                             |   1 +
+ ui/android/window_android.h                        |   8 +
+ ui/base/BUILD.gn                                   |  17 +-
+ ui/base/cursor/cursor.cc                           |   2 +-
+ ui/base/dragdrop/os_exchange_data.cc               |   4 +-
+ ui/base/dragdrop/os_exchange_data.h                |   8 +-
+ .../dragdrop/os_exchange_data_provider_android.cc  | 220 ++++++
+ .../dragdrop/os_exchange_data_provider_android.h   | 101 +++
+ .../dragdrop/os_exchange_data_provider_factory.cc  |   4 +-
+ ui/events/event.h                                  |   1 +
+ ui/gfx/BUILD.gn                                    |   7 -
+ ui/gfx/animation/BUILD.gn                          |   2 +-
+ ui/message_center/BUILD.gn                         |   4 +-
+ ui/native_theme/native_theme_android.cc            |   3 +-
+ ui/native_theme/native_theme_android.h             |   2 +-
+ ui/resources/BUILD.gn                              |   4 +-
+ ui/resources/ui_resources.grd                      |   8 +-
+ ui/views/BUILD.gn                                  |  20 +-
+ ui/views/controls/menu/menu_config.cc              |   2 +-
+ ui/views/controls/menu/menu_config_android.cc      |  13 +
+ ui/views/controls/menu/menu_controller.cc          |  69 --
+ ui/views/controls/menu/menu_host.cc                |  42 -
+ ui/views/controls/menu/menu_host.h                 |   5 -
+ .../controls/native/native_view_host_android.cc    | 121 +++
+ .../controls/native/native_view_host_android.h     |  98 +++
+ .../webview/unhandled_keyboard_event_handler.cc    |   3 -
+ .../unhandled_keyboard_event_handler_default.cc    |   2 +-
+ ui/views/controls/webview/web_dialog_view.cc       |   6 +-
+ ui/views/event_monitor_android.cc                  |  65 ++
+ ui/views/event_monitor_android.h                   |  37 +
+ ui/views/metrics_android.cc                        |  36 +
+ ui/views/native_cursor_android.cc                  |  31 +
+ ui/views/view.cc                                   |   2 +
+ ui/views/views_delegate.cc                         |   3 +-
+ ...s_touch_selection_controller_factory_android.cc |  22 +
+ ...iews_touch_selection_controller_factory_aura.cc |   2 +-
+ ui/views/widget/native_widget_android.cc           | 491 ++++++++++++
+ ui/views/widget/native_widget_android.h            | 192 +++++
+ ui/views/widget/widget.cc                          | 113 +--
+ ui/webui/resources/css/roboto.css                  |   2 +-
+ ui/webui/resources/webui_resources.grd             |   6 +-
+ 405 files changed, 7738 insertions(+), 1437 deletions(-)
 
+diff --git a/AUTHORS b/AUTHORS
+index 2b694a363391..cc4ca238bbb8 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -95,6 +95,7 @@ Anuj Kumar Sharma <anujk.sharma@samsung.com>
+ Arjun Karthik <arjunkar@amazon.com>
+ Arman Ghotb <armanghotb@gmail.com>
+ Armin Burgmeier <aburgmeier@bloomberg.net>
++Arnaud Granal <arnaud@geometry.ee>
+ Arnaud Mandy <arnaud.mandy@intel.com>
+ Arnaud Renevier <a.renevier@samsung.com>
+ Arpita Bahuguna <a.bah@samsung.com>
+@@ -237,6 +238,7 @@ Diana Suvorova <diana.suvorova@gmail.com>
+ Diego Ferreiro Val <elfogris@gmail.com>
+ Dillon Sellars <dill.sellars@gmail.com>
+ Divya Bansal <divya.bansal@samsung.com>
++Dmitry Valter <dvalter@protonmail.com>
+ Dominic Farolino <domfarolino@gmail.com>
+ Dominic Jodoin <dominic.jodoin@gmail.com>
+ Dominik Röttsches <dominik.rottsches@intel.com>
 diff --git a/BUILD.gn b/BUILD.gn
 index efaf5b31ee37..56b8e7fd1180 100644
 --- a/BUILD.gn
@@ -429,6 +458,57 @@ index 20b6b4bb1fbd..cb72214c8cee 100644
  
    'src/third_party/libgifcodec':
       Var('skia_git') + '/libgifcodec' + '@'+  Var('libgifcodec_revision'),
+diff --git a/GN_ARGS b/GN_ARGS
+new file mode 100644
+index 000000000000..b3c9c4a32bdc
+--- /dev/null
++++ b/GN_ARGS
+@@ -0,0 +1,45 @@
++target_os = "android"
++target_cpu = "arm64" # <---- can be arm, arm64, x86 or x64
++is_debug = false
++is_java_debug = false
++
++android_channel = "stable"
++is_official_build = true
++is_component_build = false
++is_chrome_branded = false
++is_clang = true
++symbol_level = 1
++use_unofficial_version_number = false
++android_default_version_code = "158"
++android_default_version_name = "Quadea"
++fieldtrial_testing_like_official_build = true
++icu_use_data_file = false
++enable_iterator_debugging = false
++
++google_api_key = "KIWIBROWSER"
++google_default_client_id = "42.apps.kiwibrowser.com"
++google_default_client_secret = "KIWIBROWSER_NOT_SO_SECRET"
++use_official_google_api_keys = false
++
++ffmpeg_branding = "Chrome"
++proprietary_codecs = true
++enable_hevc_demuxing = true
++enable_nacl = false
++enable_wifi_display = false
++enable_widevine = false
++enable_google_now = true
++enable_ac3_eac3_audio_demuxing = true
++enable_iterator_debugging = false
++enable_mse_mpeg2ts_stream_parser = true
++enable_remoting = false
++rtc_use_h264 = false
++rtc_use_lto = false
++use_openh264 = false
++
++v8_use_external_startup_data = true
++update_android_aar_prebuilts = true
++
++use_thin_lto = true
++
++enable_extensions = true
++enable_plugins = true
 diff --git a/apps/BUILD.gn b/apps/BUILD.gn
 index bba3724ca1d0..18aa35d48877 100644
 --- a/apps/BUILD.gn
@@ -442,6 +522,25 @@ index bba3724ca1d0..18aa35d48877 100644
  assert(enable_extensions,
         "Cannot depend on extensions because enable_extensions=false.")
  
+diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
+index fbf8335f11ba..38d984d611c6 100644
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -1582,12 +1582,12 @@ config("chromium_code") {
+   } else {
+     cflags = [ "-Wall" ]
+     if (treat_warnings_as_errors) {
+-      cflags += [ "-Werror" ]
++      cflags += [ "-Wno-error" ]
+ 
+       # The compiler driver can sometimes (rarely) emit warnings before calling
+       # the actual linker.  Make sure these warnings are treated as errors as
+       # well.
+-      ldflags = [ "-Werror" ]
++      ldflags = [ "-Wno-error" ]
+     }
+     if (is_clang) {
+       # Enable extra warnings for chromium_code when we control the compiler.
 diff --git a/build/config/compiler/compiler.gni b/build/config/compiler/compiler.gni
 index 8ecf5e641af4..459cfc7d83d6 100644
 --- a/build/config/compiler/compiler.gni
@@ -481,19 +580,35 @@ index c38d03923119..d9990cc8e791 100644
      public_deps += [ "//chrome/browser/resources:welcome_resources" ]
    }
  
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+index 1a7a78173b33..9e0cce5a3555 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -1094,6 +1094,8 @@ public class ChromeTabbedActivity extends ChromeActivity implements ScreenshotMo
+      * tab is an NTP, and no action is taken.
+      */
+     private boolean reuseOrCreateNewNtp() {
++	if (true)
++             return false;
+         // In cases where the tab model is initialized, attempt to reuse an existing NTP if
+         // available before attempting to create a new one.
+         TabModel normalTabModel = getTabModelSelector().getModel(false);
 diff --git a/chrome/app/android/chrome_main_delegate_android.cc b/chrome/app/android/chrome_main_delegate_android.cc
-index fe6940b6dc3e..7ed0aac2eef4 100644
+index fe6940b6dc3e..1acd54159397 100644
 --- a/chrome/app/android/chrome_main_delegate_android.cc
 +++ b/chrome/app/android/chrome_main_delegate_android.cc
-@@ -73,26 +73,33 @@ void ChromeMainDelegateAndroid::SecureDataDirectory() {
+@@ -73,26 +73,35 @@ void ChromeMainDelegateAndroid::SecureDataDirectory() {
  int ChromeMainDelegateAndroid::RunProcess(
      const std::string& process_type,
      const content::MainFunctionParams& main_function_params) {
 +  LOG(ERROR) << "[Kiwi] ChromeMainDelegateAndroid::RunProcess - Step 1";
    TRACE_EVENT0("startup", "ChromeMainDelegateAndroid::RunProcess");
    // Defer to the default main method outside the browser process.
-   if (!process_type.empty())
+-  if (!process_type.empty())
++  if (!process_type.empty()) {
++    LOG(ERROR) << "[Kiwi] ChromeMainDelegateAndroid::RunProcess - 1b -- exit";
      return -1;
++  }
  
 +  LOG(ERROR) << "[Kiwi] ChromeMainDelegateAndroid::RunProcess - Step 2";
    SecureDataDirectory();
@@ -1267,7 +1382,7 @@ index 7b6f1aee39f3..f4b6823d6470 100644
            <structure type="chrome_scaled_image" name="IDR_WEBSTORE_ICON_16" file="google_chrome/webstore_icon_16.png" />
            <structure type="chrome_scaled_image" name="IDR_WEBSTORE_ICON_24" file="google_chrome/webstore_icon_24.png" />
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
-index d5684b2e3301..7ec580ca4241 100644
+index d5684b2e3301..5ade8db1ef52 100644
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
 @@ -407,7 +407,6 @@ jumbo_static_library("browser") {
@@ -1305,7 +1420,7 @@ index d5684b2e3301..7ec580ca4241 100644
      sources += [
        "accessibility/invert_bubble_prefs.cc",
        "accessibility/invert_bubble_prefs.h",
-@@ -3059,12 +3060,6 @@ jumbo_static_library("browser") {
+@@ -3059,19 +3060,13 @@ jumbo_static_library("browser") {
        "badging/badge_manager_delegate.h",
        "badging/badge_manager_factory.cc",
        "badging/badge_manager_factory.h",
@@ -1318,7 +1433,24 @@ index d5684b2e3301..7ec580ca4241 100644
        "bookmarks/bookmark_html_writer.cc",
        "bookmarks/bookmark_html_writer.h",
        "certificate_viewer.h",
-@@ -3295,7 +3290,6 @@ jumbo_static_library("browser") {
+       "chrome_browser_field_trials_desktop.cc",
+       "chrome_browser_field_trials_desktop.h",
+-      "chrome_process_singleton.cc",
+-      "chrome_process_singleton.h",
++#      "chrome_process_singleton.cc",
++#      "chrome_process_singleton.h",
+       "component_updater/tls_deprecation_config_component_installer.cc",
+       "component_updater/tls_deprecation_config_component_installer.h",
+       "custom_handlers/register_protocol_handler_permission_request.cc",
+@@ -3153,6 +3148,7 @@ jumbo_static_library("browser") {
+       "first_run/first_run_dialog.h",
+       "first_run/first_run_internal.h",
+       "first_run/first_run_internal_linux.cc",
++      "first_run/first_run_internal_android.cc",
+       "first_run/first_run_internal_mac.mm",
+       "first_run/first_run_internal_win.cc",
+       "font_family_cache.cc",
+@@ -3295,7 +3291,6 @@ jumbo_static_library("browser") {
        "metrics/desktop_session_duration/desktop_session_duration_tracker.h",
        "metrics/first_web_contents_profiler.cc",
        "metrics/first_web_contents_profiler.h",
@@ -1326,7 +1458,7 @@ index d5684b2e3301..7ec580ca4241 100644
        "metrics/tab_stats_data_store.cc",
        "metrics/tab_stats_data_store.h",
        "metrics/tab_stats_tracker.cc",
-@@ -3308,6 +3302,7 @@ jumbo_static_library("browser") {
+@@ -3308,6 +3303,7 @@ jumbo_static_library("browser") {
        "notifications/profile_notification.cc",
        "notifications/profile_notification.h",
        "obsolete_system/obsolete_system.h",
@@ -1334,7 +1466,7 @@ index d5684b2e3301..7ec580ca4241 100644
        "obsolete_system/obsolete_system_linux.cc",
        "obsolete_system/obsolete_system_mac.cc",
        "obsolete_system/obsolete_system_win.cc",
-@@ -3676,7 +3671,7 @@ jumbo_static_library("browser") {
+@@ -3676,7 +3672,7 @@ jumbo_static_library("browser") {
          "chrome_browser_main_posix.h",
          "first_run/first_run_internal_posix.cc",
          "importer/firefox_profile_lock_posix.cc",
@@ -1343,7 +1475,16 @@ index d5684b2e3301..7ec580ca4241 100644
          "task_manager/sampling/shared_sampler_posix.cc",
        ]
      }
-@@ -4142,7 +4137,7 @@ jumbo_static_library("browser") {
+@@ -4116,7 +4112,7 @@ jumbo_static_library("browser") {
+     ]
+   }
+ 
+-  if (is_win || is_mac || is_desktop_linux) {
++  if (true || is_win || is_mac || is_desktop_linux) {
+     sources += [
+       "browser_switcher/alternative_browser_driver.h",
+       "browser_switcher/alternative_browser_driver_win.cc",
+@@ -4142,7 +4138,7 @@ jumbo_static_library("browser") {
      defines += [ "USE_CRAS" ]
    }
  
@@ -1352,7 +1493,7 @@ index d5684b2e3301..7ec580ca4241 100644
      sources += [
        "first_run/upgrade_util.cc",
        "first_run/upgrade_util.h",
-@@ -4165,14 +4160,6 @@ jumbo_static_library("browser") {
+@@ -4165,14 +4161,6 @@ jumbo_static_library("browser") {
        "notifications/screen_lock_notification_blocker.cc",
        "notifications/screen_lock_notification_blocker.h",
        "platform_util.cc",
@@ -1367,7 +1508,7 @@ index d5684b2e3301..7ec580ca4241 100644
        "policy/cloud/user_policy_signin_service_internal.h",
        "profiles/avatar_menu.cc",
        "profiles/avatar_menu.h",
-@@ -4202,7 +4189,8 @@ jumbo_static_library("browser") {
+@@ -4202,7 +4190,8 @@ jumbo_static_library("browser") {
        "upgrade_detector/upgrade_detector_impl.cc",
        "upgrade_detector/upgrade_detector_impl.h",
      ]
@@ -1377,7 +1518,7 @@ index d5684b2e3301..7ec580ca4241 100644
      sources += [
        "media/protected_media_identifier_permission_context.cc",
        "media/protected_media_identifier_permission_context.h",
-@@ -4265,6 +4253,10 @@ jumbo_static_library("browser") {
+@@ -4265,6 +4254,10 @@ jumbo_static_library("browser") {
      deps += [ "//ui/views" ]
    }
  
@@ -1388,7 +1529,7 @@ index d5684b2e3301..7ec580ca4241 100644
    if (use_aura) {
      # Cross-platform Aura files.
      sources += [
-@@ -4297,6 +4289,7 @@ jumbo_static_library("browser") {
+@@ -4297,6 +4290,7 @@ jumbo_static_library("browser") {
        "background/background_application_list_model.h",
        "background/background_mode_manager.cc",
        "background/background_mode_manager.h",
@@ -1396,7 +1537,7 @@ index d5684b2e3301..7ec580ca4241 100644
        "background/background_mode_manager_aura.cc",
        "background/background_mode_manager_chromeos.cc",
        "background/background_mode_manager_mac.mm",
-@@ -5067,7 +5060,7 @@ jumbo_static_library("browser") {
+@@ -5067,7 +5061,7 @@ jumbo_static_library("browser") {
      }
    }
  
@@ -1405,7 +1546,15 @@ index d5684b2e3301..7ec580ca4241 100644
      sources += [
        "sessions/session_restore.cc",
        "sessions/session_restore.h",
-@@ -5438,7 +5431,7 @@ grit("resources") {
+@@ -5105,6 +5099,7 @@ jumbo_static_library("browser") {
+       "spellchecker/spellcheck_language_policy_handler.h",
+       "spellchecker/spellcheck_service.cc",
+       "spellchecker/spellcheck_service.h",
++      "spellchecker/spelling_service_client.cc",
+     ]
+ 
+     if (use_browser_spellchecker && enable_spelling_service) {
+@@ -5438,7 +5433,7 @@ grit("resources") {
      }
    }
  
@@ -1414,7 +1563,7 @@ index d5684b2e3301..7ec580ca4241 100644
      deps += [
        "//chrome/browser/resources/discards:discards_resources_gen",
        "//chrome/browser/resources/management:polymer3_elements",
-@@ -5471,7 +5464,7 @@ grit("resources") {
+@@ -5471,7 +5466,7 @@ grit("resources") {
      ]
    }
  
@@ -1863,6 +2012,20 @@ index 1deaa699ca4d..4dbf5edc9776 100644
          <include name="IDR_TAB_RANKER_EXAMPLE_PREPROCESSOR_CONFIG_PB" file="resource_coordinator\tab_ranker\example_preprocessor_config.pb" type="BINDATA" />
          <include name="IDR_TAB_RANKER_PAIRWISE_EXAMPLE_PREPROCESSOR_CONFIG_PB" file="resource_coordinator\tab_ranker\pairwise_preprocessor_config.pb" type="BINDATA" />
        </if>
+diff --git a/chrome/browser/browser_switcher/browser_switcher_service.cc b/chrome/browser/browser_switcher/browser_switcher_service.cc
+index 3ba79e0a6c49..2f9e842bf2bd 100644
+--- a/chrome/browser/browser_switcher/browser_switcher_service.cc
++++ b/chrome/browser/browser_switcher/browser_switcher_service.cc
+@@ -218,7 +218,8 @@ void XmlDownloader::Refresh() {
+ BrowserSwitcherService::BrowserSwitcherService(Profile* profile)
+     : profile_(profile),
+       prefs_(profile),
+-      driver_(new AlternativeBrowserDriverImpl(&prefs_)),
++//      driver_(new AlternativeBrowserDriverImpl(&prefs_)),
++      driver_(nullptr),
+       sitelist_(new BrowserSwitcherSitelistImpl(&prefs_)) {
+   base::ThreadTaskRunnerHandle::Get()->PostTask(
+       FROM_HERE, base::BindOnce(&BrowserSwitcherService::Init,
 diff --git a/chrome/browser/chrome_browser_main.cc b/chrome/browser/chrome_browser_main.cc
 index 5f4fd7f66362..29b0fd1173c3 100644
 --- a/chrome/browser/chrome_browser_main.cc
@@ -2236,6 +2399,33 @@ index fbdc1752d9f8..060974c837d2 100644
      deps += [
        "//base",
        "//chrome/browser/ui",
+diff --git a/chrome/browser/devtools/devtools_ui_bindings.cc b/chrome/browser/devtools/devtools_ui_bindings.cc
+index 8c98889eef89..2086e6e77abf 100644
+--- a/chrome/browser/devtools/devtools_ui_bindings.cc
++++ b/chrome/browser/devtools/devtools_ui_bindings.cc
+@@ -1535,10 +1535,12 @@ void DevToolsUIBindings::ReadyToCommitNavigation(
+       if (!opener_bindings || !opener_bindings->frontend_host_)
+         return;
+     }
++#if 0
+     frontend_host_ = content::DevToolsFrontendHost::Create(
+         navigation_handle->GetRenderFrameHost(),
+         base::Bind(&DevToolsUIBindings::HandleMessageFromDevToolsFrontend,
+                    base::Unretained(this)));
++#endif
+     return;
+   }
+ 
+@@ -1549,7 +1551,9 @@ void DevToolsUIBindings::ReadyToCommitNavigation(
+     return;
+   std::string script = base::StringPrintf("%s(\"%s\")", it->second.c_str(),
+                                           base::GenerateGUID().c_str());
++#if 0
+   content::DevToolsFrontendHost::SetupExtensionsAPI(frame, script);
++#endif
+ }
+ 
+ void DevToolsUIBindings::DocumentOnLoadCompletedInMainFrame() {
 diff --git a/chrome/browser/download/download_commands.cc b/chrome/browser/download/download_commands.cc
 index 671936f200db..1855bf61fc7d 100644
 --- a/chrome/browser/download/download_commands.cc
@@ -2498,7 +2688,7 @@ index 0ebac66a590a..fdbb49f9d00c 100644
  
  }  // namespace enterprise_reporting
 diff --git a/chrome/browser/extensions/BUILD.gn b/chrome/browser/extensions/BUILD.gn
-index 9d69db7aa109..ab62d9c08d02 100644
+index 9d69db7aa109..af961dc2c507 100644
 --- a/chrome/browser/extensions/BUILD.gn
 +++ b/chrome/browser/extensions/BUILD.gn
 @@ -221,6 +221,7 @@ jumbo_static_library("extensions") {
@@ -2517,16 +2707,7 @@ index 9d69db7aa109..ab62d9c08d02 100644
      "install_gate.h",
      "install_observer.cc",
      "install_observer.h",
-@@ -660,8 +662,6 @@ jumbo_static_library("extensions") {
-     "permissions_based_management_policy_provider.h",
-     "permissions_updater.cc",
-     "permissions_updater.h",
--    "plugin_manager.cc",
--    "plugin_manager.h",
-     "policy_extension_reinstaller.cc",
-     "policy_extension_reinstaller.h",
-     "policy_handlers.cc",
-@@ -693,6 +693,8 @@ jumbo_static_library("extensions") {
+@@ -693,6 +695,8 @@ jumbo_static_library("extensions") {
      "system_display/display_info_provider_chromeos.h",
      "system_display/display_info_provider_mac.cc",
      "system_display/display_info_provider_mac.h",
@@ -2535,7 +2716,7 @@ index 9d69db7aa109..ab62d9c08d02 100644
      "system_display/display_info_provider_win.cc",
      "system_display/display_info_provider_win.h",
      "tab_helper.cc",
-@@ -789,7 +791,6 @@ jumbo_static_library("extensions") {
+@@ -789,7 +793,6 @@ jumbo_static_library("extensions") {
      "//chrome/browser/devtools",
      "//chrome/browser/engagement:mojo_bindings",
      "//chrome/browser/media/router",
@@ -2543,7 +2724,7 @@ index 9d69db7aa109..ab62d9c08d02 100644
      "//chrome/browser/resource_coordinator:mojo_bindings",
      "//chrome/browser/safe_browsing",
      "//chrome/browser/web_applications/components",
-@@ -1092,7 +1093,7 @@ jumbo_static_library("extensions") {
+@@ -1092,7 +1095,7 @@ jumbo_static_library("extensions") {
      }
    }
  
@@ -2858,6 +3039,20 @@ index 000000000000..44c257851067
 +
 +}  // namespace api
 +}  // namespace extensions
+diff --git a/chrome/browser/extensions/api/networking_private/networking_private_ui_delegate_factory_impl.cc b/chrome/browser/extensions/api/networking_private/networking_private_ui_delegate_factory_impl.cc
+index f4ec25dd253b..9d533fda52af 100644
+--- a/chrome/browser/extensions/api/networking_private/networking_private_ui_delegate_factory_impl.cc
++++ b/chrome/browser/extensions/api/networking_private/networking_private_ui_delegate_factory_impl.cc
+@@ -14,6 +14,9 @@
+ 
+ namespace extensions {
+ 
++extensions::NetworkingPrivateDelegateFactory::UIDelegateFactory::UIDelegateFactory() {}
++extensions::NetworkingPrivateDelegateFactory::UIDelegateFactory::~UIDelegateFactory() {}
++
+ NetworkingPrivateUIDelegateFactoryImpl::
+     NetworkingPrivateUIDelegateFactoryImpl() {}
+ 
 diff --git a/chrome/browser/extensions/api/resources_private/resources_private_api.cc b/chrome/browser/extensions/api/resources_private/resources_private_api.cc
 index 3f4c26989429..ec24f31641ab 100644
 --- a/chrome/browser/extensions/api/resources_private/resources_private_api.cc
@@ -4189,6 +4384,62 @@ index ac9e76fb6044..25c288c899b7 100644
  
  class Profile;
  
+diff --git a/chrome/browser/first_run/first_run_internal_android.cc b/chrome/browser/first_run/first_run_internal_android.cc
+new file mode 100644
+index 000000000000..2e90a1b76983
+--- /dev/null
++++ b/chrome/browser/first_run/first_run_internal_android.cc
+@@ -0,0 +1,24 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/first_run/first_run_internal.h"
++
++#include "base/base_paths.h"
++#include "base/files/file_path.h"
++#include "base/path_service.h"
++#include "chrome/installer/util/master_preferences.h"
++
++namespace first_run {
++namespace internal {
++
++base::FilePath MasterPrefsPath() {
++  // The standard location of the master prefs is next to the chrome binary.
++  base::FilePath master_prefs;
++  if (!base::PathService::Get(base::DIR_EXE, &master_prefs))
++    return base::FilePath();
++  return master_prefs.AppendASCII(installer::kDefaultMasterPrefs);
++}
++
++}  // namespace internal
++}  // namespace first_run
+diff --git a/chrome/browser/first_run/first_run_internal_posix.cc b/chrome/browser/first_run/first_run_internal_posix.cc
+index db313b4d05f5..d57371017d2f 100644
+--- a/chrome/browser/first_run/first_run_internal_posix.cc
++++ b/chrome/browser/first_run/first_run_internal_posix.cc
+@@ -96,7 +96,7 @@ void ForceFirstRunDialogShownForTesting(bool shown) {
+ }
+ 
+ void DoPostImportPlatformSpecificTasks(Profile* profile) {
+-#if !defined(OS_CHROMEOS)
++#if false && !defined(OS_CHROMEOS)
+   if (!ShouldShowFirstRunDialog())
+     return;
+ 
+diff --git a/chrome/browser/first_run/upgrade_util.cc b/chrome/browser/first_run/upgrade_util.cc
+index 68b4dfba2983..d34234f1e169 100644
+--- a/chrome/browser/first_run/upgrade_util.cc
++++ b/chrome/browser/first_run/upgrade_util.cc
+@@ -33,7 +33,7 @@ bool RelaunchChromeBrowser(const base::CommandLine& command_line) {
+   if (relaunch_chrome_browser_callback_for_testing)
+     return relaunch_chrome_browser_callback_for_testing->Run(command_line);
+ 
+-  return RelaunchChromeBrowserImpl(command_line);
++  return false; //RelaunchChromeBrowserImpl(command_line);
+ }
+ 
+ #if !defined(OS_MACOSX)
 diff --git a/chrome/browser/first_run/upgrade_util.h b/chrome/browser/first_run/upgrade_util.h
 index 859b9a096342..a1705d552cb0 100644
 --- a/chrome/browser/first_run/upgrade_util.h
@@ -4304,6 +4555,120 @@ index c5e3bf578869..c9358cc04d0f 100644
      sources += [ "discovery_network_list_posix.cc" ]
    }
  
+diff --git a/chrome/browser/media/router/discovery/dial/dial_media_sink_service_impl.cc b/chrome/browser/media/router/discovery/dial/dial_media_sink_service_impl.cc
+index 94695b9f51e4..c55f39a59b13 100644
+--- a/chrome/browser/media/router/discovery/dial/dial_media_sink_service_impl.cc
++++ b/chrome/browser/media/router/discovery/dial/dial_media_sink_service_impl.cc
+@@ -152,17 +152,17 @@ void DialMediaSinkServiceImpl::OnDiscoveryComplete() {
+ 
+   // Note: calling |AddOrUpdateSink()| or |RemoveSink()| here won't cause the
+   // discovery timer to fire again, since it is considered to be still running.
+-  for (const auto& sink : sinks_to_update)
+-    AddOrUpdateSink(sink);
++//  for (const auto& sink : sinks_to_update)
++//    AddOrUpdateSink(sink);
+ 
+-  for (const auto& sink : sinks_to_remove)
+-    RemoveSink(sink);
++//  for (const auto& sink : sinks_to_remove)
++//    RemoveSink(sink);
+ 
+   // If discovered sinks are updated, then query results might have changed.
+   for (const auto& query : sink_queries_)
+     query.second->Notify(query.first);
+ 
+-  MediaSinkServiceBase::OnDiscoveryComplete();
++  //MediaSinkServiceBase::OnDiscoveryComplete();
+ }
+ 
+ void DialMediaSinkServiceImpl::OnDialDeviceEvent(
+diff --git a/chrome/browser/media/router/discovery/discovery_network_monitor.cc b/chrome/browser/media/router/discovery/discovery_network_monitor.cc
+index 7b00fc90753d..1d1e69bb2ec6 100644
+--- a/chrome/browser/media/router/discovery/discovery_network_monitor.cc
++++ b/chrome/browser/media/router/discovery/discovery_network_monitor.cc
+@@ -89,8 +89,8 @@ void DiscoveryNetworkMonitor::GetNetworkId(NetworkIdCallback callback) {
+       std::move(callback));
+ }
+ 
+-DiscoveryNetworkMonitor::DiscoveryNetworkMonitor()
+-    : DiscoveryNetworkMonitor(&GetDiscoveryNetworkInfoList) {}
++DiscoveryNetworkMonitor::DiscoveryNetworkMonitor() {}
++//    : DiscoveryNetworkMonitor(&GetDiscoveryNetworkInfoList) {}
+ 
+ DiscoveryNetworkMonitor::DiscoveryNetworkMonitor(NetworkInfoFunction strategy)
+     : network_id_(kNetworkIdDisconnected),
+diff --git a/chrome/browser/media/router/discovery/mdns/cast_media_sink_service_impl.cc b/chrome/browser/media/router/discovery/mdns/cast_media_sink_service_impl.cc
+index 4b5f4b9741ad..7a535bd70d6f 100644
+--- a/chrome/browser/media/router/discovery/mdns/cast_media_sink_service_impl.cc
++++ b/chrome/browser/media/router/discovery/mdns/cast_media_sink_service_impl.cc
+@@ -343,7 +343,7 @@ void CastMediaSinkServiceImpl::OnError(const cast_channel::CastSocket& socket,
+   // sink. We would set it to ERROR here. In OpenChannel(), we would check
+   // create a socket only if the state is not already CONNECTED.
+   MediaSinkInternal sink = sink_it->second;
+-  RemoveSink(sink);
++//  RemoveSink(sink);
+ 
+   // If socket is not opened yet, then |OnChannelOpened()| will handle the
+   // retry.
+@@ -470,8 +470,8 @@ void CastMediaSinkServiceImpl::OpenChannel(
+     DVLOG(2) << "Updating existing sink without opening new channel: "
+              << sink_id << ", name: " << cast_sink.sink().name();
+     MediaSinkInternal existing_sink_copy = *existing_sink;
+-    UpdateCastSink(cast_sink, &existing_sink_copy);
+-    AddOrUpdateSink(existing_sink_copy);
++//    UpdateCastSink(cast_sink, &existing_sink_copy);
++//    AddOrUpdateSink(existing_sink_copy);
+     return;
+   }
+ 
+@@ -600,8 +600,8 @@ void CastMediaSinkServiceImpl::OnChannelOpenSucceeded(
+       metrics_.RecordCastSinkDiscoverySource(SinkSource::kDialMdns);
+     }
+   }
+-  AddOrUpdateSink(cast_sink);
+-  failure_count_map_.erase(sink_id);
++//  AddOrUpdateSink(cast_sink);
++//  failure_count_map_.erase(sink_id);
+ 
+   // To maintain the invariant that an IPEndpoint appears in at most one entry
+   // in the sink list, we will remove the sink (if any) that has the same
+@@ -615,15 +615,15 @@ void CastMediaSinkServiceImpl::OnChannelOpenSucceeded(
+                             entry.second.cast_data().ip_endpoint == ip_endpoint;
+                    });
+ 
+-  if (old_sink_it != sinks.end())
+-    RemoveSink(old_sink_it->second);
++//  if (old_sink_it != sinks.end())
++//    RemoveSink(old_sink_it->second);
+ 
+   // Certain classes of Cast sinks support advertising via SSDP but do not
+   // properly implement the rest of the DIAL protocol. If we successfully open
+   // a Cast channel to a device that came from DIAL, remove it from
+   // |dial_media_sink_service_|. This ensures the device shows up as a Cast sink
+   // only.
+-  dial_media_sink_service_->RemoveSinkById(GetDialSinkIdFromCast(sink_id));
++//  dial_media_sink_service_->RemoveSinkById(GetDialSinkIdFromCast(sink_id));
+ }
+ 
+ void CastMediaSinkServiceImpl::OnChannelOpenFailed(
+@@ -636,7 +636,7 @@ void CastMediaSinkServiceImpl::OnChannelOpenFailed(
+       !(ip_endpoint == existing_sink->cast_data().ip_endpoint))
+     return;
+ 
+-  RemoveSink(sink);
++//  RemoveSink(sink);
+ }
+ 
+ void CastMediaSinkServiceImpl::OnSinkAddedOrUpdated(
+@@ -668,7 +668,7 @@ void CastMediaSinkServiceImpl::TryConnectDialDiscoveredSink(
+     metrics_.RecordCastSinkDiscoverySource(SinkSource::kMdnsDial);
+     // Sink is a Cast device; remove from |dial_media_sink_service_| to prevent
+     // duplicates.
+-    dial_media_sink_service_->RemoveSink(dial_sink);
++//    dial_media_sink_service_->RemoveSink(dial_sink);
+     return;
+   }
+ 
 diff --git a/chrome/browser/media/router/media_router.h b/chrome/browser/media/router/media_router.h
 index 07f9eed08322..226f382fd3da 100644
 --- a/chrome/browser/media/router/media_router.h
@@ -4403,6 +4768,261 @@ index bc1d4b51e60f..1f429d03dea4 100644
  
  // TODO(crbug.com/1028753): Remove default-enabled kDialMediaRouteProvider after
  // tests stop disabling it.
+diff --git a/chrome/browser/media/router/providers/cast/cast_activity_manager.cc b/chrome/browser/media/router/providers/cast/cast_activity_manager.cc
+index 19217163e047..01d098198ac6 100644
+--- a/chrome/browser/media/router/providers/cast/cast_activity_manager.cc
++++ b/chrome/browser/media/router/providers/cast/cast_activity_manager.cc
+@@ -38,6 +38,7 @@ CastActivityManager::CastActivityManager(
+   DCHECK(media_router_);
+   DCHECK(session_tracker_);
+   message_handler_->AddObserver(this);
++#if 0
+   for (const auto& sink_id_session : session_tracker_->GetSessions()) {
+     const MediaSinkInternal* sink =
+         media_sink_service_->GetSinkById(sink_id_session.first);
+@@ -45,6 +46,7 @@ CastActivityManager::CastActivityManager(
+       break;
+     AddNonLocalActivityRecord(*sink, *sink_id_session.second);
+   }
++#endif
+   session_tracker_->AddObserver(this);
+ }
+ 
+@@ -119,8 +121,9 @@ void CastActivityManager::DoLaunchSession(DoLaunchSessionParams params) {
+ 
+   // TODO(crbug.com/904995): In the case of multiple app IDs (e.g. mirroring),
+   // we need to choose an appropriate app ID to launch based on capabilities.
+-  std::string app_id = cast_source.GetAppIds()[0];
+-
++  std::string app_id = "";//cast_source.GetAppIds()[0];
++  return;
++#if 0
+   DVLOG(2) << "Launching session with route ID = " << route_id
+            << ", source ID = " << cast_source.source_id()
+            << ", sink ID = " << sink.sink().id() << ", app ID = " << app_id
+@@ -155,6 +158,7 @@ void CastActivityManager::DoLaunchSession(DoLaunchSessionParams params) {
+   std::move(params.callback)
+       .Run(route, std::move(presentation_connection),
+            /* error_text */ base::nullopt, RouteRequestResult::ResultCode::OK);
++#endif
+ }
+ 
+ void CastActivityManager::LaunchSessionAfterTerminatingExisting(
+@@ -178,7 +182,7 @@ void CastActivityManager::LaunchSessionAfterTerminatingExisting(
+ bool CastActivityManager::CanJoinSession(const ActivityRecord& activity,
+                                          const CastMediaSource& cast_source,
+                                          bool incognito) const {
+-  if (!cast_source.ContainsApp(activity.app_id()))
++//  if (!cast_source.ContainsApp(activity.app_id()))
+     return false;
+ 
+   if (base::Contains(activity.connected_clients(), cast_source.client_id()))
+@@ -234,8 +238,9 @@ ActivityRecord* CastActivityManager::FindActivityForAutoJoin(
+         const ActivityRecord* record = activity.second.get();
+         if (!record->route().is_local())
+           return false;
+-        if (!cast_source.ContainsApp(record->app_id()))
++//        if (!cast_source.ContainsApp(record->app_id()))
+           return false;
++#if 0
+         const auto& clients = record->connected_clients();
+         return std::any_of(clients.begin(), clients.end(),
+                            [policy, &origin, tab_id](const auto& client) {
+@@ -243,6 +248,7 @@ ActivityRecord* CastActivityManager::FindActivityForAutoJoin(
+                                                       client.second->origin(),
+                                                       client.second->tab_id());
+                            });
++#endif
+       });
+   return it == activities_.end() ? nullptr : it->second.get();
+ }
+@@ -286,16 +292,19 @@ void CastActivityManager::JoinSession(
+   // RouteRequestResult::ResultCode.  The check is currently performed inside
+   // CanJoinSession(), and the behavior is consistent with the old
+   // implementation, which never reports an INCOGNITO_MISMATCH error.
+-
++#if 0
+   const MediaSinkInternal* sink =
+       media_sink_service_->GetSinkById(activity->route().media_sink_id());
+   if (!sink) {
++#else
++  {
++#endif
+     std::move(callback).Run(base::nullopt, nullptr,
+                             std::string("Sink not found"),
+                             RouteRequestResult::ResultCode::SINK_NOT_FOUND);
+     return;
+   }
+-
++#if 0
+   mojom::RoutePresentationConnectionPtr presentation_connection =
+       activity->AddClient(cast_source, origin, tab_id);
+ 
+@@ -313,6 +322,7 @@ void CastActivityManager::JoinSession(
+   NotifyAllOnRoutesUpdated();
+   std::move(callback).Run(activity->route(), std::move(presentation_connection),
+                           base::nullopt, RouteRequestResult::ResultCode::OK);
++#endif
+ }
+ 
+ // TODO(jrw): Can this be merged with HandleStopSessionResponse?
+@@ -377,7 +387,7 @@ void CastActivityManager::TerminateSession(
+     return;
+   }
+ 
+-  const MediaSinkInternal* sink = media_sink_service_->GetSinkByRoute(route);
++  const MediaSinkInternal* sink = nullptr; //media_sink_service_->GetSinkByRoute(route);
+   CHECK(sink);
+ 
+   activity->SendStopSessionMessageToReceiver(
+@@ -402,8 +412,8 @@ CastActivityManager::FindActivityByChannelId(int channel_id) {
+   return std::find_if(
+       activities_.begin(), activities_.end(), [channel_id, this](auto& entry) {
+         const MediaRoute& route = entry.second->route();
+-        const MediaSinkInternal* sink =
+-            media_sink_service_->GetSinkByRoute(route);
++        const MediaSinkInternal* sink = nullptr;
++//            media_sink_service_->GetSinkByRoute(route);
+         return sink && sink->cast_data().cast_channel_id == channel_id;
+       });
+ }
+@@ -555,6 +565,7 @@ cast_channel::ResultCallback CastActivityManager::MakeResultCallbackForRoute(
+ void CastActivityManager::AddNonLocalActivityRecord(
+     const MediaSinkInternal& sink,
+     const CastSession& session) {
++#if 0
+   const MediaSink::Id& sink_id = sink.sink().id();
+ 
+   // We derive the MediaSource from a session using the app ID.
+@@ -577,6 +588,7 @@ void CastActivityManager::AddNonLocalActivityRecord(
+ 
+   auto* activity_ptr = AddCastActivityRecord(route, app_id);
+   activity_ptr->SetOrUpdateSession(session, sink, hash_token_);
++#endif
+ }
+ 
+ const MediaRoute* CastActivityManager::GetRoute(
+diff --git a/chrome/browser/media/router/providers/cast/cast_activity_record.cc b/chrome/browser/media/router/providers/cast/cast_activity_record.cc
+index f783cc21a196..66bcf2ec28dd 100644
+--- a/chrome/browser/media/router/providers/cast/cast_activity_record.cc
++++ b/chrome/browser/media/router/providers/cast/cast_activity_record.cc
+@@ -131,7 +131,7 @@ void CastActivityRecord::SendStopSessionMessageToReceiver(
+     const std::string& hash_token,
+     mojom::MediaRouteProvider::TerminateRouteCallback callback) {
+   const std::string& sink_id = route_.media_sink_id();
+-  const MediaSinkInternal* sink = media_sink_service_->GetSinkById(sink_id);
++  const MediaSinkInternal* sink = nullptr; //media_sink_service_->GetSinkById(sink_id);
+   DCHECK(sink);
+   DCHECK(session_id_);
+ 
+@@ -240,7 +240,7 @@ void CastActivityRecord::OnInternalMessage(
+     const cast_channel::InternalMessage& message) {}
+ 
+ int CastActivityRecord::GetCastChannelId() {
+-  const MediaSinkInternal* sink = media_sink_service_->GetSinkByRoute(route_);
++  const MediaSinkInternal* sink = nullptr;//media_sink_service_->GetSinkByRoute(route_);
+   if (!sink) {
+     // TODO(crbug.com/905002): Add UMA metrics for this and other error
+     // conditions.
+diff --git a/chrome/browser/media/router/providers/cast/cast_app_availability_tracker.cc b/chrome/browser/media/router/providers/cast/cast_app_availability_tracker.cc
+index 543d3ec7b762..800f8a41f9f5 100644
+--- a/chrome/browser/media/router/providers/cast/cast_app_availability_tracker.cc
++++ b/chrome/browser/media/router/providers/cast/cast_app_availability_tracker.cc
+@@ -67,8 +67,8 @@ std::vector<CastMediaSource> CastAppAvailabilityTracker::UpdateAppAvailability(
+ 
+   std::vector<CastMediaSource> affected_sources;
+   for (const auto& source : registered_sources_) {
+-    if (source.second.ContainsApp(app_id))
+-      affected_sources.push_back(source.second);
++//    if (source.second.ContainsApp(app_id))
++//      affected_sources.push_back(source.second);
+   }
+   return affected_sources;
+ }
+diff --git a/chrome/browser/media/router/providers/cast/cast_app_discovery_service.cc b/chrome/browser/media/router/providers/cast/cast_app_discovery_service.cc
+index 3b06c1fbcb37..f1df66c69175 100644
+--- a/chrome/browser/media/router/providers/cast/cast_app_discovery_service.cc
++++ b/chrome/browser/media/router/providers/cast/cast_app_discovery_service.cc
+@@ -171,7 +171,9 @@ void CastAppDiscoveryServiceImpl::UpdateAppAvailability(
+     cast_channel::GetAppAvailabilityResult availability) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   RecordAppAvailabilityResult(availability, clock_->NowTicks() - start_time);
++#if 0
+   if (!media_sink_service_->GetSinkById(sink_id))
++#endif
+     return;
+ 
+   DVLOG(1) << "App " << app_id << " on sink " << sink_id << " is "
+@@ -197,11 +199,13 @@ void CastAppDiscoveryServiceImpl::UpdateSinkQueries(
+ std::vector<MediaSinkInternal> CastAppDiscoveryServiceImpl::GetSinksByIds(
+     const base::flat_set<MediaSink::Id>& sink_ids) const {
+   std::vector<MediaSinkInternal> sinks;
++#if 0
+   for (const auto& sink_id : sink_ids) {
+     const MediaSinkInternal* sink = media_sink_service_->GetSinkById(sink_id);
+     if (sink)
+       sinks.push_back(*sink);
+   }
++#endif
+   return sinks;
+ }
+ 
+diff --git a/chrome/browser/media/router/providers/cast/cast_media_route_provider.cc b/chrome/browser/media/router/providers/cast/cast_media_route_provider.cc
+index 2488bb17b926..8c8bda589e7f 100644
+--- a/chrome/browser/media/router/providers/cast/cast_media_route_provider.cc
++++ b/chrome/browser/media/router/providers/cast/cast_media_route_provider.cc
+@@ -100,14 +100,18 @@ void CastMediaRouteProvider::CreateRoute(const std::string& source_id,
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   // TODO(https://crbug.com/809249): Handle mirroring routes, including
+   // mirror-to-Cast transitions.
++#if 0
+   const MediaSinkInternal* sink = media_sink_service_->GetSinkById(sink_id);
+   if (!sink) {
++#else
++  {
++#endif
+     std::move(callback).Run(base::nullopt, nullptr,
+                             std::string("Sink not found"),
+                             RouteRequestResult::ResultCode::SINK_NOT_FOUND);
+     return;
+   }
+-
++#if 0
+   std::unique_ptr<CastMediaSource> cast_source =
+       CastMediaSource::FromMediaSourceId(source_id);
+   if (!cast_source) {
+@@ -119,6 +123,7 @@ void CastMediaRouteProvider::CreateRoute(const std::string& source_id,
+ 
+   activity_manager_->LaunchSession(*cast_source, *sink, presentation_id, origin,
+                                    tab_id, incognito, std::move(callback));
++#endif
+ }
+ 
+ void CastMediaRouteProvider::JoinRoute(const std::string& media_source,
+@@ -191,8 +196,8 @@ void CastMediaRouteProvider::StartObservingMediaSinks(
+   // app precache message to receivers.
+   if (cast_source->broadcast_request()) {
+     // TODO(imcheng): Add metric to record broadcast usage.
+-    BroadcastMessageToSinks(cast_source->GetAppIds(),
+-                            *cast_source->broadcast_request());
++//    BroadcastMessageToSinks(cast_source->GetAppIds(),
++//                            *cast_source->broadcast_request());
+     return;
+   }
+ 
+diff --git a/chrome/browser/media/router/providers/cast/mirroring_activity_record.cc b/chrome/browser/media/router/providers/cast/mirroring_activity_record.cc
+index 18d315905e42..7ff3cafa3802 100644
+--- a/chrome/browser/media/router/providers/cast/mirroring_activity_record.cc
++++ b/chrome/browser/media/router/providers/cast/mirroring_activity_record.cc
+@@ -197,7 +197,7 @@ void MirroringActivityRecord::SendStopSessionMessageToReceiver(
+     const std::string& hash_token,
+     MediaRouteProvider::TerminateRouteCallback callback) {
+   const std::string& sink_id = route_.media_sink_id();
+-  const MediaSinkInternal* sink = media_sink_service_->GetSinkById(sink_id);
++  const MediaSinkInternal* sink = nullptr; //media_sink_service_->GetSinkById(sink_id);
+   DCHECK(sink);
+   DCHECK(session_id_);
+   message_handler_->StopSession(
 diff --git a/chrome/browser/media/webrtc/media_capture_devices_dispatcher.cc b/chrome/browser/media/webrtc/media_capture_devices_dispatcher.cc
 index 954ce6977683..1543cc5af246 100644
 --- a/chrome/browser/media/webrtc/media_capture_devices_dispatcher.cc
@@ -4443,6 +5063,19 @@ index b14b36d349ec..59e086f593e1 100644
  }
  
  void ChromeFeatureListCreator::SetApplicationLocale(const std::string& locale) {
+diff --git a/chrome/browser/notifications/fullscreen_notification_blocker.cc b/chrome/browser/notifications/fullscreen_notification_blocker.cc
+index 5429c12e2b8c..5abad73a1faa 100644
+--- a/chrome/browser/notifications/fullscreen_notification_blocker.cc
++++ b/chrome/browser/notifications/fullscreen_notification_blocker.cc
+@@ -23,7 +23,7 @@ FullscreenNotificationBlocker::~FullscreenNotificationBlocker() {
+ 
+ void FullscreenNotificationBlocker::CheckState() {
+   bool was_fullscreen_mode = is_fullscreen_mode_;
+-  is_fullscreen_mode_ = IsFullScreenMode();
++  is_fullscreen_mode_ = false;//IsFullScreenMode();
+   if (is_fullscreen_mode_ != was_fullscreen_mode)
+     NotifyBlockingStateChanged();
+ 
 diff --git a/chrome/browser/notifications/notification_display_service_impl.cc b/chrome/browser/notifications/notification_display_service_impl.cc
 index 46f516b5f2d3..c01c2778d775 100644
 --- a/chrome/browser/notifications/notification_display_service_impl.cc
@@ -4614,6 +5247,18 @@ index 1e063a0c1aab..57723a447cb3 100644
  #endif
  
    return GURL(kPluginsServerUrl + filename);
+diff --git a/chrome/browser/policy/BUILD.gn b/chrome/browser/policy/BUILD.gn
+index 87450f3ec300..35d45c3d030d 100644
+--- a/chrome/browser/policy/BUILD.gn
++++ b/chrome/browser/policy/BUILD.gn
+@@ -8,6 +8,7 @@ source_set("path_parser") {
+   sources = [
+     "policy_path_parser.h",
+     "policy_path_parser_linux.cc",
++    "policy_path_parser_android.cc",
+     "policy_path_parser_mac.mm",
+     "policy_path_parser_win.cc",
+   ]
 diff --git a/chrome/browser/policy/browser_dm_token_storage_android.cc b/chrome/browser/policy/browser_dm_token_storage_android.cc
 new file mode 100644
 index 000000000000..b89463561bea
@@ -4901,6 +5546,83 @@ index 9c2fdea178f5..05b15eab5c8d 100644
    { key::kRelaunchNotification,
      prefs::kRelaunchNotification,
      base::Value::Type::INTEGER },
+diff --git a/chrome/browser/policy/policy_path_parser_android.cc b/chrome/browser/policy/policy_path_parser_android.cc
+new file mode 100644
+index 000000000000..669a85bc765d
+--- /dev/null
++++ b/chrome/browser/policy/policy_path_parser_android.cc
+@@ -0,0 +1,71 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <pwd.h>
++#include <stddef.h>
++#include <sys/types.h>
++#include <unistd.h>
++
++#include "chrome/browser/policy/policy_path_parser.h"
++
++#include "base/logging.h"
++
++namespace policy {
++
++namespace path_parser {
++
++const char kMachineNamePolicyVarName[] = "${machine_name}";
++const char kUserNamePolicyVarName[] = "${user_name}";
++
++// Replaces all variable occurrences in the policy string with the respective
++// system settings values.
++base::FilePath::StringType ExpandPathVariables(
++    const base::FilePath::StringType& untranslated_string) {
++  base::FilePath::StringType result(untranslated_string);
++  if (result.length() == 0)
++    return result;
++  // Sanitize quotes in case of any around the whole string.
++  if (result.length() > 1 &&
++      ((result.front() == '"' && result.back() == '"') ||
++       (result.front() == '\'' && result.back() == '\''))) {
++    // Strip first and last char which should be matching quotes now.
++    result = result.substr(1, result.length() - 2);
++  }
++  // Translate two special variables ${user_name} and ${machine_name}
++  size_t position = result.find(kUserNamePolicyVarName);
++  if (position != std::string::npos) {
++    struct passwd* user = getpwuid(geteuid());
++    if (user) {
++      result.replace(position, strlen(kUserNamePolicyVarName), user->pw_name);
++    } else {
++      LOG(ERROR) << "Username variable can not be resolved. ";
++    }
++  }
++  position = result.find(kMachineNamePolicyVarName);
++  if (position != std::string::npos) {
++    char machinename[255];
++    if (gethostname(machinename, 255) == 0) {
++      result.replace(position, strlen(kMachineNamePolicyVarName), machinename);
++    } else {
++      LOG(ERROR) << "Machine name variable can not be resolved.";
++    }
++  }
++  return result;
++}
++
++void CheckUserDataDirPolicy(base::FilePath* user_data_dir) {
++  // This function is not implemented in Linux because we don't support the
++  // policy on this platform.
++  NOTREACHED();
++}
++
++void CheckDiskCacheDirPolicy(base::FilePath* user_data_dir) {
++  // This function is not implemented in Linux because we don't support the
++  // policy on this platform.
++  NOTREACHED();
++}
++
++}  // namespace path_parser
++
++}  // namespace policy
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
 index 236422f50eba..407f094cd57f 100644
 --- a/chrome/browser/prefs/browser_prefs.cc
@@ -5677,7 +6399,7 @@ index 7c835593998b..051b36eed26b 100644
  #endif
    PrefService* GetOffTheRecordPrefs() override;
 diff --git a/chrome/browser/profiles/profile_manager.cc b/chrome/browser/profiles/profile_manager.cc
-index c5ab679fb529..1dd39be9cce1 100644
+index c5ab679fb529..6ba38f9efec6 100644
 --- a/chrome/browser/profiles/profile_manager.cc
 +++ b/chrome/browser/profiles/profile_manager.cc
 @@ -123,7 +123,7 @@
@@ -5716,6 +6438,24 @@ index c5ab679fb529..1dd39be9cce1 100644
  void ProfileManager::EnsureActiveProfileExistsBeforeDeletion(
      ProfileLoadedCallback callback,
      const base::FilePath& profile_dir) {
+@@ -1724,7 +1724,7 @@ void ProfileManager::SaveActiveProfiles() {
+   }
+ }
+ 
+-#if !defined(OS_ANDROID)
++#if true || !defined(OS_ANDROID)
+ void ProfileManager::OnBrowserOpened(Browser* browser) {
+   DCHECK(browser);
+   Profile* profile = browser->profile();
+@@ -1856,7 +1856,7 @@ void ProfileManager::OnNewActiveProfileLoaded(
+ void ProfileManager::ScheduleForcedEphemeralProfileForDeletion(
+     const base::FilePath& profile_dir) {
+   DCHECK_EQ(0u, chrome::GetBrowserCount(GetProfileByPath(profile_dir)));
+-  DCHECK(IsProfileEphemeral(&GetProfileAttributesStorage(), profile_dir));
++//  DCHECK(IsProfileEphemeral(&GetProfileAttributesStorage(), profile_dir));
+ 
+   // Search for latest active profile, already loaded preferably.
+   bool found_entry_loaded = false;
 diff --git a/chrome/browser/profiles/profile_manager.h b/chrome/browser/profiles/profile_manager.h
 index 7d02af7f8f60..87c16b05395a 100644
 --- a/chrome/browser/profiles/profile_manager.h
@@ -6312,6 +7052,355 @@ index f73fca57478f..73917f70e8d7 100644
  #include "chrome/browser/ui/browser_commands.h"
  #include "chrome/browser/ui/browser_finder.h"
  #include "chrome/browser/ui/browser_window.h"
+diff --git a/chrome/browser/spellchecker/spelling_service_client.cc b/chrome/browser/spellchecker/spelling_service_client.cc
+new file mode 100644
+index 000000000000..7b888886b357
+--- /dev/null
++++ b/chrome/browser/spellchecker/spelling_service_client.cc
+@@ -0,0 +1,343 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "components/spellcheck/browser/spelling_service_client.h"
++
++#include <stddef.h>
++
++#include <algorithm>
++#include <memory>
++
++#include "base/bind.h"
++#include "base/json/json_reader.h"
++#include "base/json/string_escape.h"
++#include "base/memory/ptr_util.h"
++#include "base/metrics/histogram_functions.h"
++#include "base/metrics/histogram_macros.h"
++#include "base/stl_util.h"
++#include "base/strings/string_util.h"
++#include "base/strings/stringprintf.h"
++#include "base/strings/utf_string_conversions.h"
++#include "base/values.h"
++#include "components/prefs/pref_service.h"
++#include "components/spellcheck/browser/pref_names.h"
++#include "components/spellcheck/common/spellcheck_common.h"
++#include "components/spellcheck/common/spellcheck_result.h"
++#include "components/user_prefs/user_prefs.h"
++#include "content/public/browser/browser_context.h"
++#include "content/public/browser/storage_partition.h"
++#include "google_apis/google_api_keys.h"
++#include "net/base/load_flags.h"
++#include "services/network/public/cpp/resource_request.h"
++#include "services/network/public/cpp/shared_url_loader_factory.h"
++#include "services/network/public/cpp/simple_url_loader.h"
++#include "url/gurl.h"
++
++namespace {
++
++// The REST endpoint for requesting spell checking and sending user feedback.
++const char kSpellingServiceRestURL[] =
++    "https://www.googleapis.com/spelling/v%d/spelling/check?key=%s";
++
++// The spellcheck suggestions object key in the JSON response from the spelling
++// service.
++const char kMisspellingsRestPath[] = "spellingCheckResponse.misspellings";
++
++// The location of error messages in JSON response from spelling service.
++const char kErrorPath[] = "error";
++
++// Languages currently supported by SPELLCHECK.
++const char* const kValidLanguages[] = {"en", "es", "fi", "da"};
++
++}  // namespace
++
++SpellingServiceClient::SpellingServiceClient() = default;
++
++SpellingServiceClient::~SpellingServiceClient() = default;
++
++bool SpellingServiceClient::RequestTextCheck(
++    content::BrowserContext* context,
++    ServiceType type,
++    const base::string16& text,
++    TextCheckCompleteCallback callback) {
++  DCHECK(type == SUGGEST || type == SPELLCHECK);
++  if (!context || !IsAvailable(context, type)) {
++    std::move(callback).Run(false, text, std::vector<SpellCheckResult>());
++    return false;
++  }
++  const PrefService* pref = user_prefs::UserPrefs::Get(context);
++  DCHECK(pref);
++
++  std::string dictionary;
++  pref->GetList(spellcheck::prefs::kSpellCheckDictionaries)
++      ->GetString(0, &dictionary);
++
++  std::string language_code;
++  std::string country_code;
++  spellcheck::GetISOLanguageCountryCodeFromLocale(dictionary, &language_code,
++                                                  &country_code);
++
++  // Replace typographical apostrophes with typewriter apostrophes, so that
++  // server word breaker behaves correctly.
++  const base::char16 kApostrophe = 0x27;
++  const base::char16 kRightSingleQuotationMark = 0x2019;
++  base::string16 text_copy = text;
++  std::replace(text_copy.begin(), text_copy.end(), kRightSingleQuotationMark,
++               kApostrophe);
++
++  std::string api_key = google_apis::GetAPIKey();
++  std::string encoded_text = base::GetQuotedJSONString(text_copy);
++
++  static const char kSpellingRequestRestBodyTemplate[] =
++      "{"
++      "\"text\":%s,"
++      "\"language\":\"%s\","
++      "\"originCountry\":\"%s\""
++      "}";
++
++  std::string request_body =
++      base::StringPrintf(kSpellingRequestRestBodyTemplate, encoded_text.c_str(),
++                         language_code.c_str(), country_code.c_str());
++
++  // Create traffic annotation tag.
++  net::NetworkTrafficAnnotationTag traffic_annotation =
++      net::DefineNetworkTrafficAnnotation("spellcheck_lookup", R"(
++        semantics {
++          sender: "Online Spellcheck"
++          description:
++            "Chromium can provide smarter spell-checking, by sending the text "
++            "that the users type into the browser, to Google's servers. This"
++            "allows users to use the same spell-checking technology used by "
++            "Google products, such as Docs. If the feature is enabled, "
++            "Chromium will send the entire contents of text fields as user "
++            "types them to Google, along with the browser’s default language. "
++            "Google returns a list of suggested spellings, which will be "
++            "displayed in the context menu."
++          trigger: "User types text into a text field or asks to correct a "
++                   "misspelled word."
++          data: "Text a user has typed into a text field. No user identifier "
++                "is sent along with the text."
++          destination: GOOGLE_OWNED_SERVICE
++        }
++        policy {
++          cookies_allowed: NO
++          setting:
++            "Users can enable or disable this feature via 'Enhanced spell "
++            "check' in Chromium's settings under 'Sync and Google services'. "
++            "The feature is disabled by default."
++          chrome_policy {
++            SpellCheckServiceEnabled {
++                policy_options {mode: MANDATORY}
++                SpellCheckServiceEnabled: false
++            }
++          }
++        })");
++
++  auto resource_request = std::make_unique<network::ResourceRequest>();
++  resource_request->url = BuildEndpointUrl(type);
++  resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
++  resource_request->method = "POST";
++
++  std::unique_ptr<network::SimpleURLLoader> simple_url_loader =
++      network::SimpleURLLoader::Create(std::move(resource_request),
++                                       traffic_annotation);
++  simple_url_loader->AttachStringForUpload(request_body, "application/json");
++
++  auto it = spellcheck_loaders_.insert(
++      spellcheck_loaders_.begin(),
++      std::make_unique<TextCheckCallbackData>(std::move(simple_url_loader),
++                                              std::move(callback), text));
++  network::SimpleURLLoader* loader = it->get()->simple_url_loader.get();
++  auto url_loader_factory =
++      url_loader_factory_for_testing_
++          ? url_loader_factory_for_testing_
++          : content::BrowserContext::GetDefaultStoragePartition(context)
++                ->GetURLLoaderFactoryForBrowserProcess();
++  loader->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
++      url_loader_factory.get(),
++      base::BindOnce(&SpellingServiceClient::OnSimpleLoaderComplete,
++                     base::Unretained(this), std::move(it),
++                     base::TimeTicks::Now()));
++  return true;
++}
++
++bool SpellingServiceClient::IsAvailable(content::BrowserContext* context,
++                                        ServiceType type) {
++  const PrefService* pref = user_prefs::UserPrefs::Get(context);
++  DCHECK(pref);
++  // If prefs don't allow spell checking, if enhanced spell check is disabled,
++  // or if the context is off the record, the spelling service should be
++  // unavailable.
++  if (!pref->GetBoolean(spellcheck::prefs::kSpellCheckEnable) ||
++      !pref->GetBoolean(spellcheck::prefs::kSpellCheckUseSpellingService) ||
++      context->IsOffTheRecord())
++    return false;
++
++  // If the locale for spelling has not been set, the user has not decided to
++  // use spellcheck so we don't do anything remote (suggest or spelling).
++  std::string locale;
++  pref->GetList(spellcheck::prefs::kSpellCheckDictionaries)
++      ->GetString(0, &locale);
++  if (locale.empty())
++    return false;
++
++  // Finally, if all options are available, we only enable only SUGGEST
++  // if SPELLCHECK is not available for our language because SPELLCHECK results
++  // are a superset of SUGGEST results.
++  for (const char* language : kValidLanguages) {
++    if (!locale.compare(0, 2, language))
++      return type == SPELLCHECK;
++  }
++
++  // Only SUGGEST is allowed.
++  return type == SUGGEST;
++}
++
++void SpellingServiceClient::SetURLLoaderFactoryForTesting(
++    scoped_refptr<network::SharedURLLoaderFactory>
++        url_loader_factory_for_testing) {
++  url_loader_factory_for_testing_ = std::move(url_loader_factory_for_testing);
++}
++
++GURL SpellingServiceClient::BuildEndpointUrl(int type) {
++    return GURL(base::StringPrintf(kSpellingServiceRestURL, type,
++                                   google_apis::GetAPIKey().c_str()));
++}
++
++bool SpellingServiceClient::ParseResponse(
++    const std::string& data,
++    std::vector<SpellCheckResult>* results) {
++  // Data is in the following format:
++  //  * spellingCheckResponse: A wrapper object containing the response
++  //    * mispellings: (optional Array<object>) A list of mistakes for the
++  //      requested text, with the following format:
++  //      * charStart: (number) The zero-based start of the misspelled region
++  //      * charLength: (number) The length of the misspelled region
++  //      * suggestions: (Array<object>) The suggestions for the misspelled
++  //        text, with the following format:
++  //        * suggestion: (string) the suggestion for the correct text
++  //      * canAutoCorrect (optional boolean) Whether we can use the first
++  //        suggestion for auto-correction
++  //
++  // Example response for "duck goes quisk":
++  //  {
++  //    "spellingCheckResponse": {
++  //      "misspellings": [{
++  //        "charStart": 10,
++  //        "charLength": 5,
++  //        "suggestions": [{
++  //          "suggestion": "quack"
++  //        }],
++  //        "canAutoCorrect": false
++  //      }]
++  //    }
++  //  }
++  //
++  // If the service is not available, the Spelling service returns JSON with an
++  // error:
++  //  {
++  //    "error": {
++  //      "code": 400,
++  //      "message": "Bad Request",
++  //      "data": [...]
++  //    }
++  //  }
++
++  std::unique_ptr<base::DictionaryValue> value(
++      static_cast<base::DictionaryValue*>(
++          base::JSONReader::ReadDeprecated(data,
++                                           base::JSON_ALLOW_TRAILING_COMMAS)
++              .release()));
++  if (!value || !value->is_dict())
++    return false;
++
++  // Check for errors from spelling service.
++  base::DictionaryValue* error = nullptr;
++  if (value->GetDictionary(kErrorPath, &error))
++    return false;
++
++  // Retrieve the array of Misspelling objects. When the input text does not
++  // have misspelled words, it returns an empty JSON. (In this case, its HTTP
++  // status is 200.) We just return true for this case.
++  base::ListValue* misspellings = nullptr;
++
++  if (!value->GetList(kMisspellingsRestPath, &misspellings))
++    return true;
++
++  for (size_t i = 0; i < misspellings->GetSize(); ++i) {
++    // Retrieve the i-th misspelling region and put it to the given vector. When
++    // the Spelling service sends two or more suggestions, we read only the
++    // first one because SpellCheckResult can store only one suggestion.
++    base::DictionaryValue* misspelling = nullptr;
++    if (!misspellings->GetDictionary(i, &misspelling))
++      return false;
++
++    int start = 0;
++    int length = 0;
++    base::ListValue* suggestions = nullptr;
++    if (!misspelling->GetInteger("charStart", &start) ||
++        !misspelling->GetInteger("charLength", &length) ||
++        !misspelling->GetList("suggestions", &suggestions)) {
++      return false;
++    }
++
++    base::DictionaryValue* suggestion = nullptr;
++    base::string16 replacement;
++    if (!suggestions->GetDictionary(0, &suggestion) ||
++        !suggestion->GetString("suggestion", &replacement)) {
++      return false;
++    }
++    SpellCheckResult result(SpellCheckResult::SPELLING, start, length,
++                            replacement);
++    results->push_back(result);
++  }
++  return true;
++}
++
++SpellingServiceClient::TextCheckCallbackData::TextCheckCallbackData(
++    std::unique_ptr<network::SimpleURLLoader> simple_url_loader,
++    TextCheckCompleteCallback callback,
++    base::string16 text)
++    : simple_url_loader(std::move(simple_url_loader)),
++      callback(std::move(callback)),
++      text(text) {}
++
++SpellingServiceClient::TextCheckCallbackData::~TextCheckCallbackData() {}
++
++void SpellingServiceClient::OnSimpleLoaderComplete(
++    SpellCheckLoaderList::iterator it,
++    base::TimeTicks request_start,
++    std::unique_ptr<std::string> response_body) {
++  UMA_HISTOGRAM_TIMES("SpellCheck.SpellingService.RequestDuration",
++                      base::TimeTicks::Now() - request_start);
++
++  TextCheckCompleteCallback callback = std::move(it->get()->callback);
++  base::string16 text = it->get()->text;
++  bool success = false;
++  std::vector<SpellCheckResult> results;
++  if (response_body)
++    success = ParseResponse(*response_body, &results);
++
++  int response_code = net::ERR_FAILED;
++  auto* resp_info = it->get()->simple_url_loader->ResponseInfo();
++  if (resp_info && resp_info->headers) {
++    response_code = resp_info->headers->response_code();
++  }
++
++  ServiceRequestResultType result_type =
++      ServiceRequestResultType::kRequestFailure;
++  if (success) {
++    result_type = results.empty()
++                      ? ServiceRequestResultType::kSuccessEmpty
++                      : ServiceRequestResultType::kSuccessWithSuggestions;
++  }
++
++  base::UmaHistogramSparse("SpellCheck.SpellingService.RequestHttpResponseCode",
++                           response_code);
++  UMA_HISTOGRAM_ENUMERATION("SpellCheck.SpellingService.RequestResultType",
++                            result_type);
++
++  spellcheck_loaders_.erase(it);
++  std::move(callback).Run(success, text, results);
++}
 diff --git a/chrome/browser/startup_data.cc b/chrome/browser/startup_data.cc
 index ba8b5a110c2b..6217f5c91593 100644
 --- a/chrome/browser/startup_data.cc
@@ -6515,8 +7604,20 @@ index bed5a18c962d..22dab3738847 100644
  }
  
  ProfileSyncServiceFactory::~ProfileSyncServiceFactory() = default;
+diff --git a/chrome/browser/touch_to_fill/android/BUILD.gn b/chrome/browser/touch_to_fill/android/BUILD.gn
+index 2667e4002ac1..77ec077e2f16 100644
+--- a/chrome/browser/touch_to_fill/android/BUILD.gn
++++ b/chrome/browser/touch_to_fill/android/BUILD.gn
+@@ -4,6 +4,7 @@
+ 
+ import("//build/config/android/rules.gni")
+ import("//chrome/android/features/android_library_factory_tmpl.gni")
++import("//third_party/protobuf/proto_library.gni")
+ 
+ source_set("android") {
+   visibility = [ "//chrome/browser/touch_to_fill:factory" ]
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
-index 7932e2421de6..5f5c103fe632 100644
+index 7932e2421de6..6b096a497bae 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
 @@ -587,7 +587,7 @@ jumbo_static_library("ui") {
@@ -6667,7 +7768,7 @@ index 7932e2421de6..5f5c103fe632 100644
        "views/passwords/account_chooser_dialog_view.cc",
        "views/passwords/account_chooser_dialog_view.h",
        "views/passwords/auto_signin_first_run_dialog_view.cc",
-@@ -3058,8 +3057,6 @@ jumbo_static_library("ui") {
+@@ -3058,59 +3057,12 @@ jumbo_static_library("ui") {
        "views/passwords/password_auto_sign_in_view.h",
        "views/passwords/password_bubble_view_base.cc",
        "views/passwords/password_bubble_view_base.h",
@@ -6676,7 +7777,58 @@ index 7932e2421de6..5f5c103fe632 100644
        "views/passwords/password_items_view.cc",
        "views/passwords/password_items_view.h",
        "views/passwords/password_pending_view.cc",
-@@ -3154,8 +3151,6 @@ jumbo_static_library("ui") {
+       "views/passwords/password_pending_view.h",
+       "views/passwords/password_save_confirmation_view.cc",
+       "views/passwords/password_save_confirmation_view.h",
+-      "views/payments/contact_info_editor_view_controller.cc",
+-      "views/payments/contact_info_editor_view_controller.h",
+-      "views/payments/credit_card_editor_view_controller.cc",
+-      "views/payments/credit_card_editor_view_controller.h",
+-      "views/payments/cvc_unmask_view_controller.cc",
+-      "views/payments/cvc_unmask_view_controller.h",
+-      "views/payments/editor_view_controller.cc",
+-      "views/payments/editor_view_controller.h",
+-      "views/payments/error_message_view_controller.cc",
+-      "views/payments/error_message_view_controller.h",
+-      "views/payments/order_summary_view_controller.cc",
+-      "views/payments/order_summary_view_controller.h",
+-      "views/payments/payment_handler_modal_dialog_manager_delegate.cc",
+-      "views/payments/payment_handler_modal_dialog_manager_delegate.h",
+-      "views/payments/payment_handler_web_flow_view_controller.cc",
+-      "views/payments/payment_handler_web_flow_view_controller.h",
+-      "views/payments/payment_method_view_controller.cc",
+-      "views/payments/payment_method_view_controller.h",
+-      "views/payments/payment_request_dialog_view.cc",
+-      "views/payments/payment_request_dialog_view.h",
+-      "views/payments/payment_request_dialog_view_ids.h",
+-      "views/payments/payment_request_item_list.cc",
+-      "views/payments/payment_request_item_list.h",
+-      "views/payments/payment_request_row_view.cc",
+-      "views/payments/payment_request_row_view.h",
+-      "views/payments/payment_request_sheet_controller.cc",
+-      "views/payments/payment_request_sheet_controller.h",
+-      "views/payments/payment_request_views_util.cc",
+-      "views/payments/payment_request_views_util.h",
+-      "views/payments/payment_sheet_view_controller.cc",
+-      "views/payments/payment_sheet_view_controller.h",
+-      "views/payments/profile_list_view_controller.cc",
+-      "views/payments/profile_list_view_controller.h",
+-      "views/payments/shipping_address_editor_view_controller.cc",
+-      "views/payments/shipping_address_editor_view_controller.h",
+-      "views/payments/shipping_option_view_controller.cc",
+-      "views/payments/shipping_option_view_controller.h",
+-      "views/payments/validating_combobox.cc",
+-      "views/payments/validating_combobox.h",
+-      "views/payments/validating_textfield.cc",
+-      "views/payments/validating_textfield.h",
+-      "views/payments/validation_delegate.cc",
+-      "views/payments/validation_delegate.h",
+-      "views/payments/view_stack.cc",
+-      "views/payments/view_stack.h",
+       "views/permission_bubble/chooser_bubble_ui.cc",
+       "views/permission_bubble/chooser_bubble_ui.h",
+       "views/permission_bubble/chooser_bubble_ui_views.cc",
+@@ -3154,8 +3106,6 @@ jumbo_static_library("ui") {
        "views/sharing/sharing_dialog_view.h",
        "views/sharing/sharing_icon_view.cc",
        "views/sharing/sharing_icon_view.h",
@@ -6685,7 +7837,7 @@ index 7932e2421de6..5f5c103fe632 100644
        "views/status_bubble_views.cc",
        "views/status_bubble_views.h",
        "views/subtle_notification_view.cc",
-@@ -3369,8 +3364,6 @@ jumbo_static_library("ui") {
+@@ -3369,8 +3319,6 @@ jumbo_static_library("ui") {
        sources += [
          "views/create_application_shortcut_view.cc",
          "views/create_application_shortcut_view.h",
@@ -6694,7 +7846,7 @@ index 7932e2421de6..5f5c103fe632 100644
        ]
      }
  
-@@ -3458,6 +3451,14 @@ jumbo_static_library("ui") {
+@@ -3458,6 +3406,14 @@ jumbo_static_library("ui") {
      }
    }
  
@@ -6709,6 +7861,15 @@ index 7932e2421de6..5f5c103fe632 100644
    if (use_aura) {
      sources += [
        "aura/accessibility/automation_manager_aura.cc",
+@@ -3957,7 +3913,7 @@ jumbo_static_library("ui") {
+       "//components/printing/browser",
+       "//printing",
+     ]
+-    if (!is_chromeos && !is_android) {
++    if (true || !is_chromeos && !is_android) {
+       sources += [
+         "webui/settings/printing_handler.cc",
+         "webui/settings/printing_handler.h",
 diff --git a/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc b/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
 index ed43c8eff770..48c291866e75 100644
 --- a/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
@@ -6751,7 +7912,7 @@ index ed43c8eff770..48c291866e75 100644
  
  bool HasBookmarkURLs(const std::vector<const BookmarkNode*>& selection) {
 diff --git a/chrome/browser/ui/browser.cc b/chrome/browser/ui/browser.cc
-index d262a424f49b..d07206288837 100644
+index d262a424f49b..c28d26c1d338 100644
 --- a/chrome/browser/ui/browser.cc
 +++ b/chrome/browser/ui/browser.cc
 @@ -280,6 +280,7 @@ const int kUIUpdateCoalescingTimeMS = 200;
@@ -6762,7 +7923,17 @@ index d262a424f49b..d07206288837 100644
    return BrowserWindow::CreateBrowserWindow(std::move(browser), user_gesture);
  }
  
-@@ -1946,6 +1947,7 @@ void Browser::RequestPpapiBrokerPermission(
+@@ -1314,7 +1315,8 @@ bool Browser::ShouldAllowRunningInsecureContent(
+   if (allowed_per_prefs)
+     return true;
+ 
+-  if (base::FeatureList::IsEnabled(features::kMixedContentSiteSetting)) {
++//  if (base::FeatureList::IsEnabled(features::kMixedContentSiteSetting)) {
++  if (0) {
+     Profile* profile =
+         Profile::FromBrowserContext(web_contents->GetBrowserContext());
+     HostContentSettingsMap* content_settings =
+@@ -1946,6 +1948,7 @@ void Browser::RequestPpapiBrokerPermission(
      return;
    }
  
@@ -6770,7 +7941,7 @@ index d262a424f49b..d07206288837 100644
    TabSpecificContentSettings* tab_content_settings =
        TabSpecificContentSettings::FromWebContents(web_contents);
  
-@@ -1977,7 +1979,8 @@ void Browser::RequestPpapiBrokerPermission(
+@@ -1977,7 +1980,8 @@ void Browser::RequestPpapiBrokerPermission(
                           ? base::UserMetricsAction("PPAPI.BrokerSettingAllow")
                           : base::UserMetricsAction("PPAPI.BrokerSettingDeny"));
    tab_content_settings->SetPepperBrokerAllowed(allowed);
@@ -6780,7 +7951,7 @@ index d262a424f49b..d07206288837 100644
    return;
  }
  
-@@ -2587,6 +2590,7 @@ void Browser::SetAsDelegate(WebContents* web_contents, bool set_delegate) {
+@@ -2587,6 +2591,7 @@ void Browser::SetAsDelegate(WebContents* web_contents, bool set_delegate) {
    web_contents->SetDelegate(delegate);
  
    // ...and all the helpers.
@@ -6788,7 +7959,7 @@ index d262a424f49b..d07206288837 100644
    WebContentsModalDialogManager::FromWebContents(web_contents)
        ->SetDelegate(delegate);
    translate::ContentTranslateDriver* content_translate_driver =
-@@ -2600,6 +2604,7 @@ void Browser::SetAsDelegate(WebContents* web_contents, bool set_delegate) {
+@@ -2600,6 +2605,7 @@ void Browser::SetAsDelegate(WebContents* web_contents, bool set_delegate) {
      content_translate_driver->RemoveObserver(this);
      BookmarkTabHelper::FromWebContents(web_contents)->RemoveObserver(this);
    }
@@ -7065,6 +8236,44 @@ index 83f24dfcc1ea..8ab6d5fa5072 100644
  // The model for the blocked Framebust bubble.
  class ContentSettingFramebustBlockBubbleModel
      : public ContentSettingSingleRadioGroup,
+diff --git a/chrome/browser/ui/exclusive_access/fullscreen_controller.cc b/chrome/browser/ui/exclusive_access/fullscreen_controller.cc
+index 88f2f3e679d3..7f9138d29a77 100644
+--- a/chrome/browser/ui/exclusive_access/fullscreen_controller.cc
++++ b/chrome/browser/ui/exclusive_access/fullscreen_controller.cc
+@@ -95,6 +95,7 @@ bool FullscreenController::IsTabFullscreen() const {
+ 
+ bool FullscreenController::IsFullscreenForTabOrPending(
+     const WebContents* web_contents) const {
++#if 0
+   if (IsFullscreenWithinTab(web_contents))
+     return true;
+   if (web_contents == exclusive_access_tab()) {
+@@ -109,6 +110,9 @@ bool FullscreenController::IsFullscreenForTabOrPending(
+     return true;
+   }
+   return false;
++#else
++  return true;
++#endif
+ }
+ 
+ bool FullscreenController::IsFullscreenCausedByTab() const {
+diff --git a/chrome/browser/ui/extensions/extension_install_ui_default.cc b/chrome/browser/ui/extensions/extension_install_ui_default.cc
+index ba7dfe118da1..ee86339695a5 100644
+--- a/chrome/browser/ui/extensions/extension_install_ui_default.cc
++++ b/chrome/browser/ui/extensions/extension_install_ui_default.cc
+@@ -60,9 +60,11 @@ void ShowExtensionInstalledBubble(
+     scoped_refptr<const extensions::Extension> extension,
+     Profile* profile,
+     const SkBitmap& icon) {
++  #if 0
+   Browser* browser = FindOrCreateVisibleBrowser(profile);
+   if (browser)
+     ExtensionInstalledBubble::ShowBubble(extension, browser, icon);
++  #endif
+ }
+ 
+ }  // namespace
 diff --git a/chrome/browser/ui/fast_unload_controller.cc b/chrome/browser/ui/fast_unload_controller.cc
 new file mode 100644
 index 000000000000..fe6f07d69351
@@ -7693,6 +8902,47 @@ index 90619d7736dc..183d62110adc 100644
    // Returns icons for the given PermissionInfo |info|. If |info|'s current
    // setting is CONTENT_SETTING_DEFAULT, it will return the icon for |info|'s
    // default setting.
+diff --git a/chrome/browser/ui/passwords/manage_passwords_view_utils.cc b/chrome/browser/ui/passwords/manage_passwords_view_utils.cc
+index 71bdf570f52e..8617869aa7e7 100644
+--- a/chrome/browser/ui/passwords/manage_passwords_view_utils.cc
++++ b/chrome/browser/ui/passwords/manage_passwords_view_utils.cc
+@@ -232,7 +232,7 @@ bool ShouldManagePasswordsinGooglePasswordManager(Profile* profile) {
+ }
+ 
+ // Navigation is handled differently on Android.
+-#if !defined(OS_ANDROID)
++#if true || !defined(OS_ANDROID)
+ void NavigateToGooglePasswordManager(Profile* profile,
+                                      ManagePasswordsReferrer referrer) {
+   NavigateParams params(profile, GetGooglePasswordManagerURL(referrer),
+@@ -245,6 +245,7 @@ void NavigateToManagePasswordsPage(Browser* browser,
+                                    ManagePasswordsReferrer referrer) {
+   UMA_HISTOGRAM_ENUMERATION("PasswordManager.ManagePasswordsReferrer",
+                             referrer);
++#if 0
+   if (IsSignedInAndSyncingPasswordsNormally(browser->profile())) {
+     UMA_HISTOGRAM_ENUMERATION(
+         "PasswordManager.ManagePasswordsReferrerSignedInAndSyncing", referrer);
+@@ -255,6 +256,7 @@ void NavigateToManagePasswordsPage(Browser* browser,
+   }
+ 
+   chrome::ShowPasswordManager(browser);
++ #endif
+ }
+ 
+ void NavigateToPasswordCheckupPage(Profile* profile) {
+diff --git a/chrome/browser/ui/passwords/manage_passwords_view_utils.h b/chrome/browser/ui/passwords/manage_passwords_view_utils.h
+index 01d5672b8401..aed14d368277 100644
+--- a/chrome/browser/ui/passwords/manage_passwords_view_utils.h
++++ b/chrome/browser/ui/passwords/manage_passwords_view_utils.h
+@@ -10,6 +10,7 @@
+ #include "base/strings/string16.h"
+ #include "components/password_manager/core/browser/manage_passwords_referrer.h"
+ #include "components/password_manager/core/browser/origin_credential_store.h"
++// #include "chrome/browser/ui/browser.h"
+ 
+ namespace autofill {
+ struct PasswordForm;
 diff --git a/chrome/browser/ui/passwords/settings/password_manager_presenter.cc b/chrome/browser/ui/passwords/settings/password_manager_presenter.cc
 index 3fcc92f5c0dd..265ba5bfe1b9 100644
 --- a/chrome/browser/ui/passwords/settings/password_manager_presenter.cc
@@ -7821,6 +9071,24 @@ index f0ea2007c7de..1efd17a759f1 100644
  
  class Browser;
  class SigninViewControllerDelegate;
+diff --git a/chrome/browser/ui/tab_contents/chrome_web_contents_view_handle_drop.cc b/chrome/browser/ui/tab_contents/chrome_web_contents_view_handle_drop.cc
+index 52603574ba62..f06a6b120fce 100644
+--- a/chrome/browser/ui/tab_contents/chrome_web_contents_view_handle_drop.cc
++++ b/chrome/browser/ui/tab_contents/chrome_web_contents_view_handle_drop.cc
+@@ -37,6 +37,7 @@ void HandleOnPerformDrop(
+     content::WebContents* web_contents,
+     const content::DropData& drop_data,
+     content::WebContentsViewDelegate::DropCompletionCallback callback) {
++#if 0
+   safe_browsing::DeepScanningDialogDelegate::Data data;
+   Profile* profile =
+       Profile::FromBrowserContext(web_contents->GetBrowserContext());
+@@ -68,4 +69,5 @@ void HandleOnPerformDrop(
+       web_contents, std::move(data),
+       base::BindOnce(&DeepScanCompletionCallback, std::move(callback)),
+       safe_browsing::DeepScanAccessPoint::DRAG_AND_DROP);
++ #endif
+ }
 diff --git a/chrome/browser/ui/tab_helpers.cc b/chrome/browser/ui/tab_helpers.cc
 index 0d9d59805199..b488b422816b 100644
 --- a/chrome/browser/ui/tab_helpers.cc
@@ -7837,7 +9105,7 @@ index 0d9d59805199..b488b422816b 100644
      web_app::WebAppMetrics::Get(profile);
  #endif
 diff --git a/chrome/browser/ui/tabs/tab_strip_model.cc b/chrome/browser/ui/tabs/tab_strip_model.cc
-index 13143a53a18f..e27fd000f84c 100644
+index 13143a53a18f..1ef7f709f9e5 100644
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
 @@ -972,11 +972,15 @@ void TabStripModel::CloseSelectedTabs() {
@@ -7856,6 +9124,48 @@ index 13143a53a18f..e27fd000f84c 100644
  }
  
  void TabStripModel::SelectLastTab(UserGestureDetails detail) {
+@@ -1440,6 +1444,7 @@ int TabStripModel::InsertWebContentsAtImpl(
+     std::unique_ptr<content::WebContents> contents,
+     int add_types,
+     base::Optional<TabGroupId> group) {
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step 1";
+   delegate()->WillAddWebContents(contents.get());
+ 
+   bool active = (add_types & ADD_ACTIVE) != 0;
+@@ -1463,6 +1468,7 @@ int TabStripModel::InsertWebContentsAtImpl(
+     data->set_opener(active_contents);
+   }
+ 
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step A";
+   // TODO(gbillock): Ask the modal dialog manager whether the WebContents should
+   // be blocked, or just let the modal dialog manager make the blocking call
+   // directly and not use this at all.
+@@ -1485,14 +1491,23 @@ int TabStripModel::InsertWebContentsAtImpl(
+                              /*triggered_by_other_operation=*/true);
+   }
+ 
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step B1";
+   TabStripModelChange::Insert insert;
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step B2";
+   insert.contents.push_back({raw_contents, index});
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step B3";
+   TabStripModelChange change(std::move(insert));
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step B4";
++#if 0
+   for (auto& observer : observers_)
+     observer.OnTabStripModelChanged(this, change, selection);
+-  if (group.has_value())
++#endif
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step B5";
++  if (group.has_value()) {
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step B6";
+     GroupTab(index, group.value());
+-
++  }
++  LOG(ERROR) << "[Kiwi] TabStripModel::InsertWebContentsAtImpl - Step C";
+   return index;
+ }
+ 
 diff --git a/chrome/browser/ui/tabs/tab_strip_model.h b/chrome/browser/ui/tabs/tab_strip_model.h
 index f7282146e44d..92ba717b1f92 100644
 --- a/chrome/browser/ui/tabs/tab_strip_model.h
@@ -8124,6 +9434,27 @@ index 703e4565b62c..22f79d6d0a8e 100644
  
    // A FooterView shows an icon, if any, on the trailing (right in LTR) side,
    // but the Show Account Cards context is an anomaly. Its icon is on the
+diff --git a/chrome/browser/ui/views/bookmarks/bookmark_drag_drop_views.cc b/chrome/browser/ui/views/bookmarks/bookmark_drag_drop_views.cc
+index 47b6e6fc2163..b21a8257bb34 100644
+--- a/chrome/browser/ui/views/bookmarks/bookmark_drag_drop_views.cc
++++ b/chrome/browser/ui/views/bookmarks/bookmark_drag_drop_views.cc
+@@ -285,7 +285,7 @@ void DoDragImpl(std::unique_ptr<ui::OSExchangeData> drag_data,
+                 int operation) {
+   // Allow nested run loop so we get DnD events as we drag this around.
+   base::MessageLoopCurrent::ScopedNestableTaskAllower nestable_task_allower;
+-
++#if 0
+   views::Widget* widget = views::Widget::GetWidgetForNativeView(native_view);
+   if (widget) {
+     widget->RunShellDrag(nullptr, std::move(drag_data), gfx::Point(), operation,
+@@ -294,6 +294,7 @@ void DoDragImpl(std::unique_ptr<ui::OSExchangeData> drag_data,
+     views::RunShellDrag(native_view, std::move(drag_data), point, operation,
+                         source);
+   }
++#endif
+ }
+ 
+ void DragBookmarksImpl(Profile* profile,
 diff --git a/chrome/browser/ui/views/browser_dialogs_views.cc b/chrome/browser/ui/views/browser_dialogs_views.cc
 index e2943e51ac96..83a90a262853 100644
 --- a/chrome/browser/ui/views/browser_dialogs_views.cc
@@ -8180,6 +9511,30 @@ index 303a9fa508f4..5e585b890730 100644
  #if defined(OS_CHROMEOS)
      // Empty icons are used to represent default icon for aura windows. By
      // detecting this, we load the default icon from resource.
+diff --git a/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.cc b/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.cc
+index 838ed5c0d228..bbde8d453fec 100644
+--- a/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.cc
++++ b/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.cc
+@@ -237,10 +237,10 @@ DesktopMediaPickerDialogView::DesktopMediaPickerDialogView(
+   // If the picker is a separate native window, it should not be shown in the
+   // source list, so its id is passed into NativeDesktopMediaList to be ignored.
+   DesktopMediaID dialog_window_id;
++#if 0
+   if (is_separate_native_window) {
+     dialog_window_id = DesktopMediaID::RegisterNativeWindow(
+         DesktopMediaID::TYPE_WINDOW, widget->GetNativeWindow());
+-
+ #if !defined(OS_CHROMEOS) && defined(USE_AURA)
+     // Set native window ID if the windows is outside Ash.
+     dialog_window_id.id = AcceleratedWidgetToDesktopMediaId(
+@@ -253,6 +253,7 @@ DesktopMediaPickerDialogView::DesktopMediaPickerDialogView(
+     dialog_window_id.id = dialog_window_id.window_id;
+ #endif
+   }
++#endif
+ 
+   for (const auto& list_controller : list_controllers_)
+     list_controller->StartUpdating(dialog_window_id);
 diff --git a/chrome/browser/ui/views/download/download_item_view.cc b/chrome/browser/ui/views/download/download_item_view.cc
 index 0d89919158aa..42c2579138b9 100644
 --- a/chrome/browser/ui/views/download/download_item_view.cc
@@ -8226,7 +9581,7 @@ index e316230ab965..eba3fa4d0c19 100644
  }
  
 diff --git a/chrome/browser/ui/views/frame/browser_frame.cc b/chrome/browser/ui/views/frame/browser_frame.cc
-index 0d7f5b0320d9..a4dbec8a0685 100644
+index 0d7f5b0320d9..885fd3a0c38e 100644
 --- a/chrome/browser/ui/views/frame/browser_frame.cc
 +++ b/chrome/browser/ui/views/frame/browser_frame.cc
 @@ -32,6 +32,7 @@
@@ -8236,6 +9591,20 @@ index 0d7f5b0320d9..a4dbec8a0685 100644
 +#include "ui/native_theme/native_theme_android.h"
  #include "ui/views/controls/menu/menu_runner.h"
  #include "ui/views/widget/native_widget.h"
+ 
+@@ -207,11 +208,13 @@ const ui::ThemeProvider* BrowserFrame::GetThemeProvider() const {
+ }
+ 
+ const ui::NativeTheme* BrowserFrame::GetNativeTheme() const {
++#if 0
+   if (browser_view_->browser()->profile()->IsIncognitoProfile() &&
+       ThemeServiceFactory::GetForProfile(browser_view_->browser()->profile())
+           ->UsingDefaultTheme()) {
+     return ui::NativeThemeDarkAura::instance();
+   }
++#endif
+   return views::Widget::GetNativeTheme();
+ }
  
 diff --git a/chrome/browser/ui/views/frame/browser_non_client_frame_view_factory_views.cc b/chrome/browser/ui/views/frame/browser_non_client_frame_view_factory_views.cc
 index e7812b668701..11dcb80dd51e 100644
@@ -9479,6 +10848,26 @@ index f7b987878c46..fbf3cf242b82 100644
  
  #if !defined(OS_ANDROID)
  #if !defined(OS_CHROMEOS)
+diff --git a/chrome/browser/ui/webui/devtools_ui_data_source.cc b/chrome/browser/ui/webui/devtools_ui_data_source.cc
+index 0cfe18bc0cb1..e7d45dda69a6 100644
+--- a/chrome/browser/ui/webui/devtools_ui_data_source.cc
++++ b/chrome/browser/ui/webui/devtools_ui_data_source.cc
+@@ -186,6 +186,7 @@ bool DevToolsDataSource::ShouldServeMimeTypeAsContentTypeHeader() {
+ void DevToolsDataSource::StartBundledDataRequest(
+     const std::string& path,
+     content::URLDataSource::GotDataCallback callback) {
++#if 0
+   scoped_refptr<base::RefCountedMemory> bytes =
+       content::DevToolsFrontendHost::GetFrontendResourceBytes(path);
+ 
+@@ -194,6 +195,7 @@ void DevToolsDataSource::StartBundledDataRequest(
+       << ". If you compiled with debug_devtools=1, try running with "
+          "--debug-devtools.";
+   std::move(callback).Run(bytes);
++#endif
+ }
+ 
+ void DevToolsDataSource::StartRemoteDataRequest(
 diff --git a/chrome/browser/ui/webui/discards/BUILD.gn b/chrome/browser/ui/webui/discards/BUILD.gn
 index cf71fc8ea10a..a3d581e4fecb 100644
 --- a/chrome/browser/ui/webui/discards/BUILD.gn
@@ -10214,6 +11603,26 @@ index 000000000000..e2f3af9e14a8
 +}
 +
 +}  // namespace media_router
+diff --git a/chrome/browser/ui/webui/settings/about_handler.cc b/chrome/browser/ui/webui/settings/about_handler.cc
+index 21c3de52e0d5..38beabfe60e8 100644
+--- a/chrome/browser/ui/webui/settings/about_handler.cc
++++ b/chrome/browser/ui/webui/settings/about_handler.cc
+@@ -421,6 +421,7 @@ void AboutHandler::RegisterMessages() {
+ }
+ 
+ void AboutHandler::OnJavascriptAllowed() {
++#if 0
+   apply_changes_from_upgrade_observer_ = true;
+   version_updater_.reset(VersionUpdater::Create(web_ui()->GetWebContents()));
+   policy_registrar_ = std::make_unique<policy::PolicyChangeRegistrar>(
+@@ -430,6 +431,7 @@ void AboutHandler::OnJavascriptAllowed() {
+       policy::key::kDeviceAutoUpdateDisabled,
+       base::Bind(&AboutHandler::OnDeviceAutoUpdatePolicyChanged,
+                  base::Unretained(this)));
++#endif
+ }
+ 
+ void AboutHandler::OnJavascriptDisallowed() {
 diff --git a/chrome/browser/ui/webui/settings/change_password_handler.cc b/chrome/browser/ui/webui/settings/change_password_handler.cc
 index b34815f9c76f..bf86d6d1e9b8 100644
 --- a/chrome/browser/ui/webui/settings/change_password_handler.cc
@@ -10240,6 +11649,65 @@ index b34815f9c76f..bf86d6d1e9b8 100644
 -                  ->reused_password_account_type_for_last_shown_warning()) &&
 -          safe_browsing::ChromePasswordProtectionService::
 -              ShouldShowChangePasswordSettingUI(profile_)));
+ }
+ 
+ }  // namespace settings
+diff --git a/chrome/browser/ui/webui/settings/printing_handler.cc b/chrome/browser/ui/webui/settings/printing_handler.cc
+index deaa3ab5352c..626c7a784d0f 100644
+--- a/chrome/browser/ui/webui/settings/printing_handler.cc
++++ b/chrome/browser/ui/webui/settings/printing_handler.cc
+@@ -28,8 +28,10 @@ void PrintingHandler::OnJavascriptAllowed() {}
+ void PrintingHandler::OnJavascriptDisallowed() {}
+ 
+ void PrintingHandler::HandleOpenSystemPrintDialog(const base::ListValue* args) {
++#if 0
+   printing::PrinterManagerDialog::ShowPrinterManagerDialog(
+       Profile::FromWebUI(web_ui()));
++#endif
+ }
+ 
+ }  // namespace settings
+diff --git a/chrome/browser/ui/webui/settings/safety_check_handler.cc b/chrome/browser/ui/webui/settings/safety_check_handler.cc
+index be365ff44891..d5bc8cfbe612 100644
+--- a/chrome/browser/ui/webui/settings/safety_check_handler.cc
++++ b/chrome/browser/ui/webui/settings/safety_check_handler.cc
+@@ -11,10 +11,12 @@ SafetyCheckHandler::SafetyCheckHandler() = default;
+ SafetyCheckHandler::~SafetyCheckHandler() = default;
+ 
+ void SafetyCheckHandler::PerformSafetyCheck() {
++#if 0
+   version_updater_.reset(VersionUpdater::Create(web_ui()->GetWebContents()));
+   CheckUpdates(version_updater_.get(),
+                base::Bind(&SafetyCheckHandler::OnUpdateCheckResult,
+                           base::Unretained(this)));
++#endif
+ }
+ 
+ void SafetyCheckHandler::CheckUpdates(
+diff --git a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+index 8dc520241ba0..fb9e599b3962 100644
+--- a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
++++ b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+@@ -3172,7 +3172,8 @@ void AddSiteSettingsStrings(content::WebUIDataSource* html_source,
+ 
+   html_source->AddBoolean(
+       "enableInsecureContentContentSetting",
+-      base::FeatureList::IsEnabled(features::kMixedContentSiteSetting));
++      false);
++//      base::FeatureList::IsEnabled(features::kMixedContentSiteSetting));
+ 
+   html_source->AddBoolean(
+       "showImprovedCookieControlsForThirdParties",
+diff --git a/chrome/browser/ui/webui/settings/system_handler.cc b/chrome/browser/ui/webui/settings/system_handler.cc
+index 7c7082779b94..43a04da87dda 100644
+--- a/chrome/browser/ui/webui/settings/system_handler.cc
++++ b/chrome/browser/ui/webui/settings/system_handler.cc
+@@ -35,7 +35,7 @@ void SystemHandler::RegisterMessages() {
+ 
+ void SystemHandler::HandleShowProxySettings(const base::ListValue* /*args*/) {
+   base::RecordAction(base::UserMetricsAction("Options_ShowProxySettings"));
+-  settings_utils::ShowNetworkProxySettings(web_ui()->GetWebContents());
++//  settings_utils::ShowNetworkProxySettings(web_ui()->GetWebContents());
  }
  
  }  // namespace settings
@@ -10379,10 +11847,25 @@ index 767ce88329cc..5fe1aa2771f9 100644
  }
  
 diff --git a/chrome/browser/web_applications/components/BUILD.gn b/chrome/browser/web_applications/components/BUILD.gn
-index 9dd348c9ffdd..360debd54e68 100644
+index 9dd348c9ffdd..c9ed969dffb0 100644
 --- a/chrome/browser/web_applications/components/BUILD.gn
 +++ b/chrome/browser/web_applications/components/BUILD.gn
-@@ -162,7 +162,6 @@ source_set("unit_tests") {
+@@ -98,6 +98,14 @@ source_set("components") {
+     ]
+   }
+ 
++  if (is_android) {
++    sources += [
++      "web_app_shortcut_android.h",
++      "web_app_shortcut_android.cc",
++    ]
++  }
++
++
+   if (is_win) {
+     sources += [
+       "web_app_file_handler_registration_win.cc",
+@@ -162,7 +170,6 @@ source_set("unit_tests") {
      "//chrome/app/theme:theme_resources",
      "//chrome/browser/web_applications:web_app_test_group",
      "//chrome/browser/web_applications:web_applications_test_support",
@@ -10390,7 +11873,7 @@ index 9dd348c9ffdd..360debd54e68 100644
      "//content/public/browser",
      "//skia",
      "//testing/gmock",
-@@ -188,8 +187,6 @@ source_set("browser_tests") {
+@@ -188,8 +195,6 @@ source_set("browser_tests") {
      ":components",
      "//chrome/app:command_ids",
      "//chrome/browser/web_applications:web_applications_test_support",
@@ -10401,7 +11884,7 @@ index 9dd348c9ffdd..360debd54e68 100644
  }
 diff --git a/chrome/browser/web_applications/components/web_app_shortcut_android.cc b/chrome/browser/web_applications/components/web_app_shortcut_android.cc
 new file mode 100644
-index 000000000000..2bc376fe891e
+index 000000000000..6ecf48e150a0
 --- /dev/null
 +++ b/chrome/browser/web_applications/components/web_app_shortcut_android.cc
 @@ -0,0 +1,122 @@
@@ -10434,7 +11917,7 @@ index 000000000000..2bc376fe891e
 +
 +namespace {
 +
-+#if BUILDFLAG(ENABLE_APP_LIST)
++#if 0 // BUILDFLAG(ENABLE_APP_LIST)
 +// The Categories for the App Launcher desktop shortcut. Should be the same as
 +// the Chrome desktop shortcut, so they are in the same sub-menu.
 +const char kAppListCategories[] = "Network;WebBrowser;";
@@ -10701,10 +12184,10 @@ index 000000000000..4845c0cacf57
 +
 +}  // namespace web_app
 diff --git a/chrome/chrome_paks.gni b/chrome/chrome_paks.gni
-index 6469473e6a79..65bd14505dc4 100644
+index 6469473e6a79..7b2d4145cdac 100644
 --- a/chrome/chrome_paks.gni
 +++ b/chrome/chrome_paks.gni
-@@ -121,7 +121,7 @@ template("chrome_extra_paks") {
+@@ -121,31 +121,31 @@ template("chrome_extra_paks") {
        sources += invoker.additional_paks
      }
  
@@ -10712,7 +12195,49 @@ index 6469473e6a79..65bd14505dc4 100644
 +    if (true || !is_android) {
        # New paks should be added here by default.
        sources += [
-         "$root_gen_dir/chrome/bookmarks_resources.pak",
+-        "$root_gen_dir/chrome/bookmarks_resources.pak",
++#        "$root_gen_dir/chrome/bookmarks_resources.pak",
+         "$root_gen_dir/chrome/component_extension_resources.pak",
+-        "$root_gen_dir/chrome/dev_ui_resources.pak",
+-        "$root_gen_dir/chrome/downloads_resources.pak",
+-        "$root_gen_dir/chrome/history_resources.pak",
+-        "$root_gen_dir/chrome/local_ntp_resources.pak",
+-        "$root_gen_dir/chrome/new_tab_page_resources.pak",
++#        "$root_gen_dir/chrome/dev_ui_resources.pak",
++#        "$root_gen_dir/chrome/downloads_resources.pak",
++#        "$root_gen_dir/chrome/history_resources.pak",
++#        "$root_gen_dir/chrome/local_ntp_resources.pak",
++#        "$root_gen_dir/chrome/new_tab_page_resources.pak",
+         "$root_gen_dir/chrome/settings_resources.pak",
+-        "$root_gen_dir/content/browser/devtools/devtools_resources.pak",
+-        "$root_gen_dir/headless/headless_lib_resources.pak",
++#        "$root_gen_dir/content/browser/devtools/devtools_resources.pak",
++#        "$root_gen_dir/headless/headless_lib_resources.pak",
+       ]
+       deps += [
+-        "//chrome/browser/resources:bookmarks_resources",
+-        "//chrome/browser/resources:component_extension_resources",
+-        "//chrome/browser/resources:dev_ui_paks",
+-        "//chrome/browser/resources:downloads_resources",
+-        "//chrome/browser/resources:history_resources",
+-        "//chrome/browser/resources:local_ntp_resources",
+-        "//chrome/browser/resources:new_tab_page_resources",
+-        "//chrome/browser/resources:settings_resources",
+-        "//content/browser/devtools:devtools_resources",
+-        "//headless:resources",
++#        "//chrome/browser/resources:bookmarks_resources",
++         "//chrome/browser/resources:component_extension_resources",
++#        "//chrome/browser/resources:dev_ui_paks",
++#        "//chrome/browser/resources:downloads_resources",
++#        "//chrome/browser/resources:history_resources",
++#        "//chrome/browser/resources:local_ntp_resources",
++#        "//chrome/browser/resources:new_tab_page_resources",
++         "//chrome/browser/resources:settings_resources",
++#        "//content/browser/devtools:devtools_resources",
++#        "//headless:resources",
+       ]
+     }
+     if (is_chromeos) {
 diff --git a/chrome/common/BUILD.gn b/chrome/common/BUILD.gn
 index 76d1a2aaa9e2..c19894df3e6e 100644
 --- a/chrome/common/BUILD.gn
@@ -10894,6 +12419,62 @@ index d3939aa0de92..6e00e2bcfc05 100644
  
    # Enable the printing system dialog for platforms that support printing
    # and have a system dialog.
+diff --git a/chrome/common/importer/BUILD.gn b/chrome/common/importer/BUILD.gn
+index 9dffb6e3625f..c479c2cdcfc6 100644
+--- a/chrome/common/importer/BUILD.gn
++++ b/chrome/common/importer/BUILD.gn
+@@ -23,6 +23,7 @@ source_set("importer") {
+     "firefox_importer_utils.cc",
+     "firefox_importer_utils.h",
+     "firefox_importer_utils_linux.cc",
++    "firefox_importer_utils_android.cc",
+     "firefox_importer_utils_mac.mm",
+     "firefox_importer_utils_win.cc",
+     "ie_importer_utils_win.cc",
+diff --git a/chrome/common/importer/firefox_importer_utils_android.cc b/chrome/common/importer/firefox_importer_utils_android.cc
+new file mode 100644
+index 000000000000..1935dcb3b96f
+--- /dev/null
++++ b/chrome/common/importer/firefox_importer_utils_android.cc
+@@ -0,0 +1,25 @@
++// Copyright (c) 2009 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/common/importer/firefox_importer_utils.h"
++
++#include "base/base_paths.h"
++#include "base/files/file_path.h"
++#include "base/files/file_util.h"
++#include "base/path_service.h"
++
++base::FilePath GetProfilesINI() {
++  base::FilePath ini_file;
++  // The default location of the profile folder containing user data is
++  // under user HOME directory in .mozilla/firefox folder on Linux.
++  base::FilePath home;
++  base::PathService::Get(base::DIR_HOME, &home);
++  if (!home.empty()) {
++    ini_file = home.Append(".mozilla/firefox/profiles.ini");
++  }
++  if (base::PathExists(ini_file))
++    return ini_file;
++
++  return base::FilePath();
++}
+diff --git a/chrome/common/media_router/BUILD.gn b/chrome/common/media_router/BUILD.gn
+index 2f2532375913..2421f2d85cbd 100644
+--- a/chrome/common/media_router/BUILD.gn
++++ b/chrome/common/media_router/BUILD.gn
+@@ -33,7 +33,7 @@ static_library("router") {
+ 
+   deps = []
+ 
+-  if (!is_android) {
++  if (true || !is_android) {
+     sources += [
+       "discovery/media_sink_service_base.cc",
+       "discovery/media_sink_service_base.h",
 diff --git a/chrome/common/pref_names.cc b/chrome/common/pref_names.cc
 index 59e7a98db766..619f1210ca39 100644
 --- a/chrome/common/pref_names.cc
@@ -11212,10 +12793,57 @@ index 8618c9d0b341..54ba7f26ec04 100644
  extern const char kChromeUIBrowserSwitchHost[];
  extern const char kChromeUIBrowserSwitchURL[];
  #endif
+diff --git a/chrome/renderer/BUILD.gn b/chrome/renderer/BUILD.gn
+index 4e229c16628f..dec1614bc153 100644
+--- a/chrome/renderer/BUILD.gn
++++ b/chrome/renderer/BUILD.gn
+@@ -204,24 +204,6 @@ jumbo_static_library("renderer") {
+   }
+   if (enable_plugins) {
+     sources += [
+-      "pepper/chrome_renderer_pepper_host_factory.cc",
+-      "pepper/chrome_renderer_pepper_host_factory.h",
+-      "pepper/pepper_flash_drm_renderer_host.cc",
+-      "pepper/pepper_flash_drm_renderer_host.h",
+-      "pepper/pepper_flash_font_file_host.cc",
+-      "pepper/pepper_flash_font_file_host.h",
+-      "pepper/pepper_flash_fullscreen_host.cc",
+-      "pepper/pepper_flash_fullscreen_host.h",
+-      "pepper/pepper_flash_menu_host.cc",
+-      "pepper/pepper_flash_menu_host.h",
+-      "pepper/pepper_flash_renderer_host.cc",
+-      "pepper/pepper_flash_renderer_host.h",
+-      "pepper/pepper_helper.cc",
+-      "pepper/pepper_helper.h",
+-      "pepper/pepper_shared_memory_message_filter.cc",
+-      "pepper/pepper_shared_memory_message_filter.h",
+-      "pepper/pepper_uma_host.cc",
+-      "pepper/pepper_uma_host.h",
+       "plugins/chrome_plugin_placeholder.cc",
+       "plugins/chrome_plugin_placeholder.h",
+       "plugins/plugin_preroller.cc",
+@@ -230,7 +212,7 @@ jumbo_static_library("renderer") {
+       "plugins/power_saver_info.h",
+     ]
+     deps += [
+-      "//components/pdf/renderer",
++#      "//components/pdf/renderer",
+       "//components/strings",
+       "//media:media_buildflags",
+       "//ppapi/host",
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
-index ffde51cd276a..e93d7f574efc 100644
+index ffde51cd276a..16bf53253a02 100644
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
+@@ -493,7 +493,7 @@ void ChromeContentRendererClient::RenderFrameCreated(
+ #endif
+ 
+ #if BUILDFLAG(ENABLE_PLUGINS)
+-  new PepperHelper(render_frame);
++  // new PepperHelper(render_frame);
+ #endif
+ 
+ #if BUILDFLAG(ENABLE_NACL)
 @@ -634,7 +634,7 @@ bool ChromeContentRendererClient::IsPluginHandledExternally(
      const blink::WebElement& plugin_element,
      const GURL& original_url,
@@ -11225,6 +12853,20 @@ index ffde51cd276a..e93d7f574efc 100644
    DCHECK(plugin_element.HasHTMLTagName("object") ||
           plugin_element.HasHTMLTagName("embed"));
    // Blink will next try to load a WebPlugin which would end up in
+diff --git a/chrome/renderer/content_settings_agent_impl.cc b/chrome/renderer/content_settings_agent_impl.cc
+index 825945721518..ff6fb81f0501 100644
+--- a/chrome/renderer/content_settings_agent_impl.cc
++++ b/chrome/renderer/content_settings_agent_impl.cc
+@@ -433,7 +433,8 @@ bool ContentSettingsAgentImpl::AllowRunningInsecureContent(
+     const blink::WebURL& resource_url) {
+   bool allow = allowed_per_settings;
+ 
+-  if (base::FeatureList::IsEnabled(features::kMixedContentSiteSetting)) {
++//  if (base::FeatureList::IsEnabled(features::kMixedContentSiteSetting)) {
++  if (0) {
+     if (content_setting_rules_) {
+       auto setting = GetContentSettingFromRules(
+           content_setting_rules_->mixed_content_rules,
 diff --git a/chrome/renderer/media/chrome_key_systems.cc b/chrome/renderer/media/chrome_key_systems.cc
 index b1c800648c70..61d8af548ec9 100644
 --- a/chrome/renderer/media/chrome_key_systems.cc
@@ -11277,6 +12919,19 @@ index 7b0b36c8e0fd..dc1fdbb634aa 100644
    std::unique_ptr<content::ZoomLevelDelegate> CreateZoomLevelDelegate(
        const base::FilePath& partition_path) override;
  #endif  // !defined(OS_ANDROID)
+diff --git a/components/BUILD.gn b/components/BUILD.gn
+index a2cae3efc0b5..208dc0a85410 100644
+--- a/components/BUILD.gn
++++ b/components/BUILD.gn
+@@ -587,7 +587,7 @@ if (!is_ios && !is_fuchsia) {
+       data += [ "$root_out_dir/Content Shell.app/" ]
+     }
+ 
+-    if (enable_plugins) {
++    if (false && enable_plugins) {
+       sources += [ "pdf/renderer/pdf_accessibility_tree_browsertest.cc" ]
+       deps += [
+         "//components/pdf/renderer",
 diff --git a/components/autofill_payments_strings.grdp b/components/autofill_payments_strings.grdp
 index 594ca8cbbceb..526f3a0625cf 100644
 --- a/components/autofill_payments_strings.grdp
@@ -11651,6 +13306,19 @@ index 3d51145884ca..5d0123be1449 100644
      <message name="IDS_PAYMENT_REQUEST_PAYMENT_METHODS_PREVIEW" desc="This is a snippet of a payment method a user has saved to Chrome, plus an indication of the number of additional payment methods the user has saved. Its function is to show the user has payment methods that can be used to complete a payment, and thus doesn't have to type the entire payment method. [ICU Syntax]">
      {PAYMENT_METHOD, plural,
         =0 {<ph name="PAYMENT_METHOD_PREVIEW">{1}<ex>VISA ....1234</ex></ph>}
+diff --git a/components/pdf/renderer/BUILD.gn b/components/pdf/renderer/BUILD.gn
+index b729147c0ad8..057c42ddc37e 100644
+--- a/components/pdf/renderer/BUILD.gn
++++ b/components/pdf/renderer/BUILD.gn
+@@ -25,7 +25,7 @@ jumbo_static_library("renderer") {
+     "//content/public/renderer",
+     "//gin",
+     "//ipc",
+-    "//pdf:features",
++#    "//pdf:features",
+     "//ppapi/host",
+     "//ppapi/proxy",
+     "//ppapi/proxy:ipc",
 diff --git a/components/pdf_strings.grdp b/components/pdf_strings.grdp
 index 9a83490afd59..60829170e6b5 100644
 --- a/components/pdf_strings.grdp
@@ -11774,6 +13442,21 @@ index f4636abdb3f5..8a7488b6c7da 100644
  
  # Mirror is enabled and other account consistency mechanisms are not available.
  enable_mirror = is_android || is_ios
+diff --git a/components/storage_monitor/storage_monitor.cc b/components/storage_monitor/storage_monitor.cc
+index c7b2798ba42b..3f467d510c55 100644
+--- a/components/storage_monitor/storage_monitor.cc
++++ b/components/storage_monitor/storage_monitor.cc
+@@ -55,8 +55,8 @@ void StorageMonitor::ReceiverImpl::MarkInitialized() {
+ void StorageMonitor::Create(
+     std::unique_ptr<service_manager::Connector> connector) {
+   delete g_storage_monitor;
+-  g_storage_monitor = CreateInternal();
+-  g_storage_monitor->connector_ = std::move(connector);
++//  g_storage_monitor = CreateInternal();
++//  g_storage_monitor->connector_ = std::move(connector);
+ }
+ 
+ service_manager::Connector* StorageMonitor::GetConnector() {
 diff --git a/components/sync_ui_strings.grdp b/components/sync_ui_strings.grdp
 index c4751313e4b7..efdd4b94327a 100644
 --- a/components/sync_ui_strings.grdp
@@ -12934,6 +14617,35 @@ index 64bdcea5ff6a..c3eb826668d1 100644
      if (ShouldIgnore(resource.name))
        continue;
  #endif  // !defined(OS_ANDROID)
+diff --git a/content/child/child_process.cc b/content/child/child_process.cc
+index 04b8f40e3dcd..1e93f7c76c07 100644
+--- a/content/child/child_process.cc
++++ b/content/child/child_process.cc
+@@ -52,19 +52,24 @@ ChildProcess::ChildProcess(base::ThreadPriority io_thread_priority,
+     DCHECK(base::ThreadPoolInstance::Get());
+     initialized_thread_pool_ = true;
+   }
++  LOG(ERROR) << "[Kiwi] ChildProcess::ChildProcess - Step 1";
+   tracing::InitTracingPostThreadPoolStartAndFeatureList();
+ 
++  LOG(ERROR) << "[Kiwi] ChildProcess::ChildProcess - Step 2";
+   // We can't recover from failing to start the IO thread.
+   base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
++  LOG(ERROR) << "[Kiwi] ChildProcess::ChildProcess - Step 3";
+   thread_options.priority = io_thread_priority;
+ #if defined(OS_ANDROID)
+   // TODO(reveman): Remove this in favor of setting it explicitly for each type
+   // of process.
++  LOG(ERROR) << "[Kiwi] ChildProcess::ChildProcess - Step 4";
+   if (base::FeatureList::IsEnabled(
+           blink::features::kBlinkCompositorUseDisplayThreadPriority)) {
+     thread_options.priority = base::ThreadPriority::DISPLAY;
+   }
+ #endif
++  LOG(ERROR) << "[Kiwi] ChildProcess::ChildProcess - Step 5";
+   CHECK(io_thread_.StartWithOptions(thread_options));
+ }
+ 
 diff --git a/content/public/browser/browser_context.h b/content/public/browser/browser_context.h
 index 683e352d1dd7..db1d56b33034 100644
 --- a/content/public/browser/browser_context.h
@@ -12983,7 +14695,7 @@ index b70473936db0..90a9e88ebdeb 100644
    virtual SerialDelegate* GetSerialDelegate();
  #endif
 diff --git a/content/public/browser/desktop_media_id.cc b/content/public/browser/desktop_media_id.cc
-index 9330ec65d449..13ad52db8228 100644
+index 9330ec65d449..b7842b984982 100644
 --- a/content/public/browser/desktop_media_id.cc
 +++ b/content/public/browser/desktop_media_id.cc
 @@ -27,15 +27,13 @@ const DesktopMediaID::Id DesktopMediaID::kNullId = 0;
@@ -12991,7 +14703,7 @@ index 9330ec65d449..13ad52db8228 100644
  const DesktopMediaID::Id DesktopMediaID::kFakeId = -3;
  
 -#if defined(USE_AURA) || defined(OS_MACOSX)
-+#if defined(USE_AURA) || defined(OS_MACOSX) || true
++#if defined(USE_AURA) || defined(OS_MACOSX) //|| true
  // static
  DesktopMediaID DesktopMediaID::RegisterNativeWindow(DesktopMediaID::Type type,
                                                      gfx::NativeWindow window) {
@@ -13149,6 +14861,19 @@ index ac430db0ec4a..1fa06a47b70f 100644
  test("extensions_browsertests") {
    data = [
      "//extensions/test/data/",
+diff --git a/extensions/browser/api/BUILD.gn b/extensions/browser/api/BUILD.gn
+index 33291552ce3c..36010e5ef10c 100644
+--- a/extensions/browser/api/BUILD.gn
++++ b/extensions/browser/api/BUILD.gn
+@@ -103,7 +103,7 @@ source_set("api") {
+   # TODO(michaelpg): Move these deps to the individual APIs that require them.
+   deps += [
+     "//components/onc",
+-    "//components/storage_monitor",
++#    "//components/storage_monitor",
+     "//device/bluetooth",
+   ]
+ 
 diff --git a/extensions/browser/api/api_resource_manager.h b/extensions/browser/api/api_resource_manager.h
 index ae047659934e..45c0e6572261 100644
 --- a/extensions/browser/api/api_resource_manager.h
@@ -13604,6 +15329,21 @@ index 4f4db5fe4487..ec4923c33fc0 100644
          <include name="IDR_MOJO_MOJO_BINDINGS_JS"
              file="${root_gen_dir}/mojo/public/js/mojo_bindings.js"
              use_base_dir="false"
+diff --git a/net/url_request/url_request_http_job.cc b/net/url_request/url_request_http_job.cc
+index 4c19c0567d12..4358b7453480 100644
+--- a/net/url_request/url_request_http_job.cc
++++ b/net/url_request/url_request_http_job.cc
+@@ -292,6 +292,10 @@ void URLRequestHttpJob::Start() {
+       http_user_agent_settings_ ?
+           http_user_agent_settings_->GetUserAgent() : std::string());
+ 
++  if (request_info_.url.host().find("chrome.google.com") != std::string::npos) {
++    request_info_.extra_headers.SetHeader(HttpRequestHeaders::kUserAgent, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.90 Safari/537.36");
++  }
++
+   AddExtraHeaders();
+   AddCookieHeaderAndStart();
+ }
 diff --git a/services/device/public/cpp/hid/BUILD.gn b/services/device/public/cpp/hid/BUILD.gn
 index 3408f2bca518..686e7b30f92b 100644
 --- a/services/device/public/cpp/hid/BUILD.gn
@@ -13788,6 +15528,35 @@ index 53e9e0aafc49..b90f70422cf4 100644
      if (exit_code == 0) {
        tracker->SetProcessPhaseIfEnabled(
            base::debug::GlobalActivityTracker::PROCESS_EXITED_CLEANLY);
+diff --git a/services/tracing/public/cpp/perfetto/perfetto_traced_process.cc b/services/tracing/public/cpp/perfetto/perfetto_traced_process.cc
+index 24a37c545575..be088a3e44f5 100644
+--- a/services/tracing/public/cpp/perfetto/perfetto_traced_process.cc
++++ b/services/tracing/public/cpp/perfetto/perfetto_traced_process.cc
+@@ -143,19 +143,24 @@ PerfettoTaskRunner* PerfettoTracedProcess::GetTaskRunner() {
+ void PerfettoTracedProcess::ResetTaskRunnerForTesting(
+     scoped_refptr<base::SequencedTaskRunner> task_runner) {
+   GetTaskRunner()->ResetTaskRunnerForTesting(task_runner);
++  LOG(ERROR) << "[Kiwi] PerfettoTracedProcess::ResetTaskRunnerForTesting - Step 1";
+   InitTracingPostThreadPoolStartAndFeatureList();
+   // Detaching the sequence_checker_ must happen after we reset the task runner.
+   // This is because the Get() could call the constructor (if this is the first
+   // call to Get()) which would then PostTask which would create races if we
+   // reset the task runner right afterwards.
++  LOG(ERROR) << "[Kiwi] PerfettoTracedProcess::ResetTaskRunnerForTesting - Step 2";
+   DETACH_FROM_SEQUENCE(PerfettoTracedProcess::Get()->sequence_checker_);
+   // Call Get() explicitly. This ensures that we constructed the
+   // PerfettoTracedProcess. On some tests (like cast linux) the DETACH macro is
+   // compiled to nothing, which woud cause this PostTask to access a nullptr the
+   // producer requires a PostTask from inside the constructor.
++  LOG(ERROR) << "[Kiwi] PerfettoTracedProcess::ResetTaskRunnerForTesting - Step 3";
+   PerfettoTracedProcess::Get();
++  LOG(ERROR) << "[Kiwi] PerfettoTracedProcess::ResetTaskRunnerForTesting - Step 4";
+   PerfettoTracedProcess::GetTaskRunner()->GetOrCreateTaskRunner()->PostTask(
+       FROM_HERE, base::BindOnce([]() {
++  LOG(ERROR) << "[Kiwi] PerfettoTracedProcess::ResetTaskRunnerForTesting - BindOnce";
+         auto* producer =
+             PerfettoTracedProcess::Get()->SystemProducerForTesting();
+         CHECK(producer);
 diff --git a/services/tracing/public/cpp/trace_startup.cc b/services/tracing/public/cpp/trace_startup.cc
 index 3827c2a8f9f2..a7be4fe0eab4 100644
 --- a/services/tracing/public/cpp/trace_startup.cc
@@ -13825,6 +15594,55 @@ index 687a0ba72ecb..736efffdecc3 100644
      sources += [ "serial/serial.mojom" ]
    }
  
+diff --git a/third_party/libavif/src b/third_party/libavif/src
+new file mode 160000
+index 000000000000..167e406f1e2b
+--- /dev/null
++++ b/third_party/libavif/src
+@@ -0,0 +1 @@
++Subproject commit 167e406f1e2b86f6699224b5c492dc9e862ab539
+diff --git a/third_party/libgav1/src b/third_party/libgav1/src
+new file mode 160000
+index 000000000000..638ef84819f8
+--- /dev/null
++++ b/third_party/libgav1/src
+@@ -0,0 +1 @@
++Subproject commit 638ef84819f8b3cd614dcf63378fe4814aa4cb2a
+diff --git a/third_party/pywebsocket3/src b/third_party/pywebsocket3/src
+new file mode 160000
+index 000000000000..89c922843410
+--- /dev/null
++++ b/third_party/pywebsocket3/src
+@@ -0,0 +1 @@
++Subproject commit 89c9228434100e4dabb19f61d0d4f55625940638
+diff --git a/third_party/sqlite/src b/third_party/sqlite/src
+new file mode 160000
+index 000000000000..c906d361bd62
+--- /dev/null
++++ b/third_party/sqlite/src
+@@ -0,0 +1 @@
++Subproject commit c906d361bd62412e009a4ab8a9077ccf974b2fd8
+diff --git a/third_party/turbine/src b/third_party/turbine/src
+new file mode 160000
+index 000000000000..95f6fb6f1e96
+--- /dev/null
++++ b/third_party/turbine/src
+@@ -0,0 +1 @@
++Subproject commit 95f6fb6f1e962e8b6ec672905b0b04233f002dc2
+diff --git a/third_party/webgpu-cts/src b/third_party/webgpu-cts/src
+new file mode 160000
+index 000000000000..d2bd82eb5431
+--- /dev/null
++++ b/third_party/webgpu-cts/src
+@@ -0,0 +1 @@
++Subproject commit d2bd82eb543151dc9db4e058483a34bc4a3b6ff0
+diff --git a/third_party/weston/src b/third_party/weston/src
+new file mode 160000
+index 000000000000..db905f467169
+--- /dev/null
++++ b/third_party/weston/src
+@@ -0,0 +1 @@
++Subproject commit db905f467169f9f131c5ddc6038296f866d5daeb
 diff --git a/ui/android/window_android.h b/ui/android/window_android.h
 index e9dfbc755172..b21643e8a5d5 100644
 --- a/ui/android/window_android.h
@@ -14344,6 +16162,19 @@ index 164089b84732..1e47a951f680 100644
    if (use_x11) {
      deps += [ "//ui/gfx/x" ]
      configs += [ "//build/config/linux:x11" ]
+diff --git a/ui/gfx/animation/BUILD.gn b/ui/gfx/animation/BUILD.gn
+index 52f57441e332..cec9e5cc0074 100644
+--- a/ui/gfx/animation/BUILD.gn
++++ b/ui/gfx/animation/BUILD.gn
+@@ -51,7 +51,7 @@ jumbo_component("animation") {
+     sources += [ "animation_win.cc" ]
+   }
+ 
+-  if (!is_android) {
++  if (true || !is_android) {
+     sources += [
+       "throb_animation.cc",
+       "throb_animation.h",
 diff --git a/ui/message_center/BUILD.gn b/ui/message_center/BUILD.gn
 index 9ca2f4b5ce17..3b84024d8675 100644
 --- a/ui/message_center/BUILD.gn
@@ -14460,7 +16291,7 @@ index 5f88d78bfdea..398bdfe05624 100644
          <structure type="chrome_scaled_image" name="IDR_SIGNAL_1_BAR" file="common/signal_1_bar.png" />
          <structure type="chrome_scaled_image" name="IDR_SIGNAL_2_BAR" file="common/signal_2_bar.png" />
 diff --git a/ui/views/BUILD.gn b/ui/views/BUILD.gn
-index 4c814e4495d3..31348e6770de 100644
+index 4c814e4495d3..7ce1d87cb1f7 100644
 --- a/ui/views/BUILD.gn
 +++ b/ui/views/BUILD.gn
 @@ -12,7 +12,7 @@ import("//ui/base/ui_features.gni")
@@ -14498,7 +16329,15 @@ index 4c814e4495d3..31348e6770de 100644
      "controls/menu/menu_config.cc",
      "controls/menu/menu_controller.cc",
      "controls/menu/menu_delegate.cc",
-@@ -658,6 +659,17 @@ jumbo_component("views") {
+@@ -428,6 +429,7 @@ jumbo_component("views") {
+     "metadata/metadata_types.cc",
+     "metadata/type_conversion.cc",
+     "metrics.cc",
++    "metrics_android.cc",
+     "mouse_watcher.cc",
+     "mouse_watcher_view_host.cc",
+     "paint_info.cc",
+@@ -658,6 +660,17 @@ jumbo_component("views") {
      ]
    }
  
@@ -14516,7 +16355,7 @@ index 4c814e4495d3..31348e6770de 100644
    if (use_aura) {
      public += [
        "accessibility/accessibility_alert_window.h",
-@@ -682,6 +694,7 @@ jumbo_component("views") {
+@@ -682,6 +695,7 @@ jumbo_component("views") {
        "view_constants_aura.h",
        "widget/focus_manager_event_handler.h",
        "widget/native_widget_aura.h",
@@ -14524,6 +16363,19 @@ index 4c814e4495d3..31348e6770de 100644
        "widget/tooltip_manager_aura.h",
        "widget/window_reorderer.h",
      ]
+diff --git a/ui/views/controls/menu/menu_config.cc b/ui/views/controls/menu/menu_config.cc
+index a798aad86b06..6f8fa31a21e6 100644
+--- a/ui/views/controls/menu/menu_config.cc
++++ b/ui/views/controls/menu/menu_config.cc
+@@ -12,7 +12,7 @@
+ namespace views {
+ 
+ MenuConfig::MenuConfig() {
+-  Init();
++//  Init();
+ }
+ 
+ MenuConfig::~MenuConfig() = default;
 diff --git a/ui/views/controls/menu/menu_config_android.cc b/ui/views/controls/menu/menu_config_android.cc
 new file mode 100644
 index 000000000000..ded2045a5536
@@ -15223,6 +17075,20 @@ index 9b7245cc9c15..566884ccddae 100644
  }
  
  void View::PropagateNativeViewHierarchyChanged() {
+diff --git a/ui/views/views_delegate.cc b/ui/views/views_delegate.cc
+index 049fc51f6aa5..d3636320a881 100644
+--- a/ui/views/views_delegate.cc
++++ b/ui/views/views_delegate.cc
+@@ -24,7 +24,8 @@ ViewsDelegate* views_delegate = nullptr;
+ }  // namespace
+ 
+ ViewsDelegate::ViewsDelegate()
+-    : editing_controller_factory_(new ViewsTouchEditingControllerFactory) {
++    : editing_controller_factory_(nullptr) {
++//    : editing_controller_factory_(new ViewsTouchEditingControllerFactory) {
+   DCHECK(!views_delegate);
+   views_delegate = this;
+ 
 diff --git a/ui/views/views_touch_selection_controller_factory_android.cc b/ui/views/views_touch_selection_controller_factory_android.cc
 new file mode 100644
 index 000000000000..53eb2ede6247
@@ -15960,7 +17826,7 @@ index 000000000000..de83c381d51a
 +
 +#endif  // UI_VIEWS_WIDGET_NATIVE_WIDGET_AURA_H_
 diff --git a/ui/views/widget/widget.cc b/ui/views/widget/widget.cc
-index af72459e1589..e1238331e0d8 100644
+index af72459e1589..433649756050 100644
 --- a/ui/views/widget/widget.cc
 +++ b/ui/views/widget/widget.cc
 @@ -33,6 +33,7 @@
@@ -16040,8 +17906,8 @@ index af72459e1589..e1238331e0d8 100644
    const InitParams::Type type = params.type;
    const gfx::Rect bounds = params.bounds;
    const ui::WindowShowState show_state = params.show_state;
-   WidgetDelegate* delegate = params.delegate;
 +#endif
+   WidgetDelegate* delegate = params.delegate;
  
    native_widget_->InitNativeWidget(std::move(params));
 +#if 0
@@ -16189,6 +18055,3 @@ index c48c0f22da36..90955f7af882 100644
          <part file="cr_components/cr_components_resources.grdp" />
          <part file="cr_elements_resources.grdp" />
          <part file="cr_polymer_resources.grdp" />
--- 
-2.17.1
-
