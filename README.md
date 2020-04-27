@@ -18,6 +18,7 @@ Works:
 Does not work:
 * anything (debug builds)
 * extension UI
+* YouTube (and probably other media)
 
 Not tested:
 * anything else
