@@ -7,18 +7,25 @@ How to use:
 * Switch to the supported version (corresponding to a git tag)
 * Build, using gn flags from `GN_FLAGS` file
 
+Options:
+* with plugins flag (some parts are heavily patched)
+* without plugins flag (according to Kiwi devs it may be broken because `extension && (~plugins)` combination is not supported by Google
+
 Works:
 * compilation
 * browser startup (release builds only)
 * browser (at least sites tested)
-* Chrome Web Store (it does not report success)
+* Chrome Web Store (it does not report success for the first installed extension)
 * `chrome://extensions`
-* uBlock Origin (no UI though)
+* uBlock Origin (partially)
+* uMatrix (partially)
+* Dark Reader
 
 Does not work:
 * anything (debug builds)
-* extension UI
-* YouTube (and probably other media)
+* element picking in UBO
+* page refresh from UBO
+* extension sideloading :(
 
 Not tested:
 * anything else
