@@ -28,4 +28,4 @@ Copyright:
 These patches are free software and are licensed under terms of GNU General Public License, Version 3.
 A copy of the license should be present in the repository. [LICENSE](LICENSE)
 
-Some code under [https://github.com/kiwibrowser/src/blob/10b24a37e87cadcce2f5c18e85723ccc7359c1c6/LICENSE](BSD license) is used.
+Some code under [BSD-style license](https://github.com/kiwibrowser/src/blob/10b24a37e87cadcce2f5c18e85723ccc7359c1c6/LICENSE) from Chromium and Kiwi is used.
