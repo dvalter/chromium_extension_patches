@@ -1,7 +1,7 @@
-From 9a1c00c4a2dff05500dd191f7322ad8bd8191676 Mon Sep 17 00:00:00 2001
+From 2beea45c254b0108f08281d98bb11eeba39f1f72 Mon Sep 17 00:00:00 2001
 From: Dmitry Valter <dvalter@protonmail.com>
-Date: Sat, 25 Apr 2020 23:18:00 +0300
-Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
+Date: Sun, 10 May 2020 13:26:05 +0300
+Subject: [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  80.0.3987.58
 
 ---
@@ -9,11 +9,22 @@ Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  BUILD.gn                                           |   2 +-
  DEPS                                               |   2 +-
  GN_ARGS                                            |  45 ++
+ LICENSE-GPLV3                                      | 674 ++++++++++++++++
  apps/BUILD.gn                                      |   2 +-
  build/config/compiler/BUILD.gn                     |   4 +-
  build/config/compiler/compiler.gni                 |   6 +-
  chrome/BUILD.gn                                    |   4 +-
+ .../tasks/tab_groups/TabGroupModelFilter.java      |   7 +
  .../chrome/browser/ChromeTabbedActivity.java       |   2 +
+ .../chrome/browser/tabmodel/ChromeTabCreator.java  |  26 +
+ .../chrome/browser/tabmodel/EmptyTabModel.java     |   5 +
+ .../browser/tabmodel/EmptyTabModelFilter.java      |   6 +
+ .../chrome/browser/tabmodel/IncognitoTabModel.java |   5 +
+ .../chrome/browser/tabmodel/SingleTabModel.java    |   5 +
+ .../chrome/browser/tabmodel/TabCreatorManager.java |   3 +
+ .../chromium/chrome/browser/tabmodel/TabList.java  |   4 +-
+ .../chrome/browser/tabmodel/TabModelImpl.java      |  35 +
+ .../chrome/browser/tabmodel/TabModelJniBridge.java |   4 +
  chrome/app/android/chrome_main_delegate_android.cc |  11 +-
  chrome/app/bookmarks_strings.grdp                  |   6 +-
  chrome/app/chrome_main_delegate.cc                 |  13 +
@@ -22,7 +33,8 @@ Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  chrome/app/google_chrome_strings.grd               |  20 +-
  chrome/app/profiles_strings.grdp                   |  11 +-
  chrome/app/theme/theme_resources.grd               |  28 +-
- chrome/browser/BUILD.gn                            |  49 +-
+ chrome/browser/BUILD.gn                            |  50 +-
+ chrome/browser/android/appmenu/app_menu.cc         | 333 ++++++++
  chrome/browser/apps/platform_apps/BUILD.gn         |   1 -
  .../api/music_manager_private/BUILD.gn             |   1 +
  .../api/music_manager_private/device_id_android.cc | 188 +++++
@@ -62,6 +74,9 @@ Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  .../networking_private_ui_delegate_factory_impl.cc |   3 +
  .../api/resources_private/resources_private_api.cc |   2 +
  .../safe_browsing_private_event_router.cc          |   5 +
+ chrome/browser/extensions/api/tabs/tabs_api.cc     | 329 +++++++-
+ .../extensions/api/tabs/tabs_event_router.cc       |  40 +-
+ .../extensions/api/tabs/tabs_event_router.h        |   7 +-
  .../extensions/api/tabs/windows_event_router.cc    |   2 -
  chrome/browser/extensions/bookmark_app_helper.cc   | 868 +++++++++++++++++++++
  .../extensions/chrome_extensions_browser_client.cc |   7 +
@@ -159,6 +174,13 @@ Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  .../browser/sync/profile_sync_service_factory.cc   |  33 +-
  chrome/browser/touch_to_fill/android/BUILD.gn      |   1 +
  chrome/browser/ui/BUILD.gn                         | 102 +--
+ .../browser/ui/android/appmenu/internal/BUILD.gn   |  23 +
+ .../chrome/browser/ui/appmenu/AppMenu.java         | 154 +++-
+ .../browser/ui/appmenu/AppMenuCoordinatorImpl.java |   7 +-
+ .../browser/ui/appmenu/AppMenuHandlerImpl.java     |  15 +-
+ chrome/browser/ui/android/tab_model/tab_model.h    |   1 +
+ .../ui/android/tab_model/tab_model_jni_bridge.cc   |   5 +
+ .../ui/android/tab_model/tab_model_jni_bridge.h    |   1 +
  .../browser/ui/bookmarks/bookmark_utils_desktop.cc |   9 +-
  chrome/browser/ui/browser.cc                       |  10 +-
  chrome/browser/ui/browser.h                        |   2 +
@@ -178,6 +200,7 @@ Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  .../content_setting_bubble_model.h                 |   2 +-
  .../ui/exclusive_access/fullscreen_controller.cc   |   4 +
  .../ui/extensions/extension_install_ui_default.cc  |   2 +
+ .../ui/extensions/icon_with_badge_image_source.h   |   5 +
  chrome/browser/ui/fast_unload_controller.cc        | 487 ++++++++++++
  chrome/browser/ui/native_window_tracker_android.cc |  26 +
  chrome/browser/ui/native_window_tracker_android.h  |  26 +
@@ -410,7 +433,7 @@ Subject: [PATCH] [PATCH] (Almost) Correct Kiwi extension patch for Chromium
  ui/views/widget/widget.cc                          | 113 +--
  ui/webui/resources/css/roboto.css                  |   2 +-
  ui/webui/resources/webui_resources.grd             |   6 +-
- 405 files changed, 7738 insertions(+), 1437 deletions(-)
+ 428 files changed, 9416 insertions(+), 1454 deletions(-)
 
 diff --git a/AUTHORS b/AUTHORS
 index 2b694a363391..cc4ca238bbb8 100644
@@ -509,6 +532,686 @@ index 000000000000..b3c9c4a32bdc
 +
 +enable_extensions = true
 +enable_plugins = true
+diff --git a/LICENSE-GPLV3 b/LICENSE-GPLV3
+new file mode 100644
+index 000000000000..94a9ed024d38
+--- /dev/null
++++ b/LICENSE-GPLV3
+@@ -0,0 +1,674 @@
++                    GNU GENERAL PUBLIC LICENSE
++                       Version 3, 29 June 2007
++
++ Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
++ Everyone is permitted to copy and distribute verbatim copies
++ of this license document, but changing it is not allowed.
++
++                            Preamble
++
++  The GNU General Public License is a free, copyleft license for
++software and other kinds of works.
++
++  The licenses for most software and other practical works are designed
++to take away your freedom to share and change the works.  By contrast,
++the GNU General Public License is intended to guarantee your freedom to
++share and change all versions of a program--to make sure it remains free
++software for all its users.  We, the Free Software Foundation, use the
++GNU General Public License for most of our software; it applies also to
++any other work released this way by its authors.  You can apply it to
++your programs, too.
++
++  When we speak of free software, we are referring to freedom, not
++price.  Our General Public Licenses are designed to make sure that you
++have the freedom to distribute copies of free software (and charge for
++them if you wish), that you receive source code or can get it if you
++want it, that you can change the software or use pieces of it in new
++free programs, and that you know you can do these things.
++
++  To protect your rights, we need to prevent others from denying you
++these rights or asking you to surrender the rights.  Therefore, you have
++certain responsibilities if you distribute copies of the software, or if
++you modify it: responsibilities to respect the freedom of others.
++
++  For example, if you distribute copies of such a program, whether
++gratis or for a fee, you must pass on to the recipients the same
++freedoms that you received.  You must make sure that they, too, receive
++or can get the source code.  And you must show them these terms so they
++know their rights.
++
++  Developers that use the GNU GPL protect your rights with two steps:
++(1) assert copyright on the software, and (2) offer you this License
++giving you legal permission to copy, distribute and/or modify it.
++
++  For the developers' and authors' protection, the GPL clearly explains
++that there is no warranty for this free software.  For both users' and
++authors' sake, the GPL requires that modified versions be marked as
++changed, so that their problems will not be attributed erroneously to
++authors of previous versions.
++
++  Some devices are designed to deny users access to install or run
++modified versions of the software inside them, although the manufacturer
++can do so.  This is fundamentally incompatible with the aim of
++protecting users' freedom to change the software.  The systematic
++pattern of such abuse occurs in the area of products for individuals to
++use, which is precisely where it is most unacceptable.  Therefore, we
++have designed this version of the GPL to prohibit the practice for those
++products.  If such problems arise substantially in other domains, we
++stand ready to extend this provision to those domains in future versions
++of the GPL, as needed to protect the freedom of users.
++
++  Finally, every program is threatened constantly by software patents.
++States should not allow patents to restrict development and use of
++software on general-purpose computers, but in those that do, we wish to
++avoid the special danger that patents applied to a free program could
++make it effectively proprietary.  To prevent this, the GPL assures that
++patents cannot be used to render the program non-free.
++
++  The precise terms and conditions for copying, distribution and
++modification follow.
++
++                       TERMS AND CONDITIONS
++
++  0. Definitions.
++
++  "This License" refers to version 3 of the GNU General Public License.
++
++  "Copyright" also means copyright-like laws that apply to other kinds of
++works, such as semiconductor masks.
++
++  "The Program" refers to any copyrightable work licensed under this
++License.  Each licensee is addressed as "you".  "Licensees" and
++"recipients" may be individuals or organizations.
++
++  To "modify" a work means to copy from or adapt all or part of the work
++in a fashion requiring copyright permission, other than the making of an
++exact copy.  The resulting work is called a "modified version" of the
++earlier work or a work "based on" the earlier work.
++
++  A "covered work" means either the unmodified Program or a work based
++on the Program.
++
++  To "propagate" a work means to do anything with it that, without
++permission, would make you directly or secondarily liable for
++infringement under applicable copyright law, except executing it on a
++computer or modifying a private copy.  Propagation includes copying,
++distribution (with or without modification), making available to the
++public, and in some countries other activities as well.
++
++  To "convey" a work means any kind of propagation that enables other
++parties to make or receive copies.  Mere interaction with a user through
++a computer network, with no transfer of a copy, is not conveying.
++
++  An interactive user interface displays "Appropriate Legal Notices"
++to the extent that it includes a convenient and prominently visible
++feature that (1) displays an appropriate copyright notice, and (2)
++tells the user that there is no warranty for the work (except to the
++extent that warranties are provided), that licensees may convey the
++work under this License, and how to view a copy of this License.  If
++the interface presents a list of user commands or options, such as a
++menu, a prominent item in the list meets this criterion.
++
++  1. Source Code.
++
++  The "source code" for a work means the preferred form of the work
++for making modifications to it.  "Object code" means any non-source
++form of a work.
++
++  A "Standard Interface" means an interface that either is an official
++standard defined by a recognized standards body, or, in the case of
++interfaces specified for a particular programming language, one that
++is widely used among developers working in that language.
++
++  The "System Libraries" of an executable work include anything, other
++than the work as a whole, that (a) is included in the normal form of
++packaging a Major Component, but which is not part of that Major
++Component, and (b) serves only to enable use of the work with that
++Major Component, or to implement a Standard Interface for which an
++implementation is available to the public in source code form.  A
++"Major Component", in this context, means a major essential component
++(kernel, window system, and so on) of the specific operating system
++(if any) on which the executable work runs, or a compiler used to
++produce the work, or an object code interpreter used to run it.
++
++  The "Corresponding Source" for a work in object code form means all
++the source code needed to generate, install, and (for an executable
++work) run the object code and to modify the work, including scripts to
++control those activities.  However, it does not include the work's
++System Libraries, or general-purpose tools or generally available free
++programs which are used unmodified in performing those activities but
++which are not part of the work.  For example, Corresponding Source
++includes interface definition files associated with source files for
++the work, and the source code for shared libraries and dynamically
++linked subprograms that the work is specifically designed to require,
++such as by intimate data communication or control flow between those
++subprograms and other parts of the work.
++
++  The Corresponding Source need not include anything that users
++can regenerate automatically from other parts of the Corresponding
++Source.
++
++  The Corresponding Source for a work in source code form is that
++same work.
++
++  2. Basic Permissions.
++
++  All rights granted under this License are granted for the term of
++copyright on the Program, and are irrevocable provided the stated
++conditions are met.  This License explicitly affirms your unlimited
++permission to run the unmodified Program.  The output from running a
++covered work is covered by this License only if the output, given its
++content, constitutes a covered work.  This License acknowledges your
++rights of fair use or other equivalent, as provided by copyright law.
++
++  You may make, run and propagate covered works that you do not
++convey, without conditions so long as your license otherwise remains
++in force.  You may convey covered works to others for the sole purpose
++of having them make modifications exclusively for you, or provide you
++with facilities for running those works, provided that you comply with
++the terms of this License in conveying all material for which you do
++not control copyright.  Those thus making or running the covered works
++for you must do so exclusively on your behalf, under your direction
++and control, on terms that prohibit them from making any copies of
++your copyrighted material outside their relationship with you.
++
++  Conveying under any other circumstances is permitted solely under
++the conditions stated below.  Sublicensing is not allowed; section 10
++makes it unnecessary.
++
++  3. Protecting Users' Legal Rights From Anti-Circumvention Law.
++
++  No covered work shall be deemed part of an effective technological
++measure under any applicable law fulfilling obligations under article
++11 of the WIPO copyright treaty adopted on 20 December 1996, or
++similar laws prohibiting or restricting circumvention of such
++measures.
++
++  When you convey a covered work, you waive any legal power to forbid
++circumvention of technological measures to the extent such circumvention
++is effected by exercising rights under this License with respect to
++the covered work, and you disclaim any intention to limit operation or
++modification of the work as a means of enforcing, against the work's
++users, your or third parties' legal rights to forbid circumvention of
++technological measures.
++
++  4. Conveying Verbatim Copies.
++
++  You may convey verbatim copies of the Program's source code as you
++receive it, in any medium, provided that you conspicuously and
++appropriately publish on each copy an appropriate copyright notice;
++keep intact all notices stating that this License and any
++non-permissive terms added in accord with section 7 apply to the code;
++keep intact all notices of the absence of any warranty; and give all
++recipients a copy of this License along with the Program.
++
++  You may charge any price or no price for each copy that you convey,
++and you may offer support or warranty protection for a fee.
++
++  5. Conveying Modified Source Versions.
++
++  You may convey a work based on the Program, or the modifications to
++produce it from the Program, in the form of source code under the
++terms of section 4, provided that you also meet all of these conditions:
++
++    a) The work must carry prominent notices stating that you modified
++    it, and giving a relevant date.
++
++    b) The work must carry prominent notices stating that it is
++    released under this License and any conditions added under section
++    7.  This requirement modifies the requirement in section 4 to
++    "keep intact all notices".
++
++    c) You must license the entire work, as a whole, under this
++    License to anyone who comes into possession of a copy.  This
++    License will therefore apply, along with any applicable section 7
++    additional terms, to the whole of the work, and all its parts,
++    regardless of how they are packaged.  This License gives no
++    permission to license the work in any other way, but it does not
++    invalidate such permission if you have separately received it.
++
++    d) If the work has interactive user interfaces, each must display
++    Appropriate Legal Notices; however, if the Program has interactive
++    interfaces that do not display Appropriate Legal Notices, your
++    work need not make them do so.
++
++  A compilation of a covered work with other separate and independent
++works, which are not by their nature extensions of the covered work,
++and which are not combined with it such as to form a larger program,
++in or on a volume of a storage or distribution medium, is called an
++"aggregate" if the compilation and its resulting copyright are not
++used to limit the access or legal rights of the compilation's users
++beyond what the individual works permit.  Inclusion of a covered work
++in an aggregate does not cause this License to apply to the other
++parts of the aggregate.
++
++  6. Conveying Non-Source Forms.
++
++  You may convey a covered work in object code form under the terms
++of sections 4 and 5, provided that you also convey the
++machine-readable Corresponding Source under the terms of this License,
++in one of these ways:
++
++    a) Convey the object code in, or embodied in, a physical product
++    (including a physical distribution medium), accompanied by the
++    Corresponding Source fixed on a durable physical medium
++    customarily used for software interchange.
++
++    b) Convey the object code in, or embodied in, a physical product
++    (including a physical distribution medium), accompanied by a
++    written offer, valid for at least three years and valid for as
++    long as you offer spare parts or customer support for that product
++    model, to give anyone who possesses the object code either (1) a
++    copy of the Corresponding Source for all the software in the
++    product that is covered by this License, on a durable physical
++    medium customarily used for software interchange, for a price no
++    more than your reasonable cost of physically performing this
++    conveying of source, or (2) access to copy the
++    Corresponding Source from a network server at no charge.
++
++    c) Convey individual copies of the object code with a copy of the
++    written offer to provide the Corresponding Source.  This
++    alternative is allowed only occasionally and noncommercially, and
++    only if you received the object code with such an offer, in accord
++    with subsection 6b.
++
++    d) Convey the object code by offering access from a designated
++    place (gratis or for a charge), and offer equivalent access to the
++    Corresponding Source in the same way through the same place at no
++    further charge.  You need not require recipients to copy the
++    Corresponding Source along with the object code.  If the place to
++    copy the object code is a network server, the Corresponding Source
++    may be on a different server (operated by you or a third party)
++    that supports equivalent copying facilities, provided you maintain
++    clear directions next to the object code saying where to find the
++    Corresponding Source.  Regardless of what server hosts the
++    Corresponding Source, you remain obligated to ensure that it is
++    available for as long as needed to satisfy these requirements.
++
++    e) Convey the object code using peer-to-peer transmission, provided
++    you inform other peers where the object code and Corresponding
++    Source of the work are being offered to the general public at no
++    charge under subsection 6d.
++
++  A separable portion of the object code, whose source code is excluded
++from the Corresponding Source as a System Library, need not be
++included in conveying the object code work.
++
++  A "User Product" is either (1) a "consumer product", which means any
++tangible personal property which is normally used for personal, family,
++or household purposes, or (2) anything designed or sold for incorporation
++into a dwelling.  In determining whether a product is a consumer product,
++doubtful cases shall be resolved in favor of coverage.  For a particular
++product received by a particular user, "normally used" refers to a
++typical or common use of that class of product, regardless of the status
++of the particular user or of the way in which the particular user
++actually uses, or expects or is expected to use, the product.  A product
++is a consumer product regardless of whether the product has substantial
++commercial, industrial or non-consumer uses, unless such uses represent
++the only significant mode of use of the product.
++
++  "Installation Information" for a User Product means any methods,
++procedures, authorization keys, or other information required to install
++and execute modified versions of a covered work in that User Product from
++a modified version of its Corresponding Source.  The information must
++suffice to ensure that the continued functioning of the modified object
++code is in no case prevented or interfered with solely because
++modification has been made.
++
++  If you convey an object code work under this section in, or with, or
++specifically for use in, a User Product, and the conveying occurs as
++part of a transaction in which the right of possession and use of the
++User Product is transferred to the recipient in perpetuity or for a
++fixed term (regardless of how the transaction is characterized), the
++Corresponding Source conveyed under this section must be accompanied
++by the Installation Information.  But this requirement does not apply
++if neither you nor any third party retains the ability to install
++modified object code on the User Product (for example, the work has
++been installed in ROM).
++
++  The requirement to provide Installation Information does not include a
++requirement to continue to provide support service, warranty, or updates
++for a work that has been modified or installed by the recipient, or for
++the User Product in which it has been modified or installed.  Access to a
++network may be denied when the modification itself materially and
++adversely affects the operation of the network or violates the rules and
++protocols for communication across the network.
++
++  Corresponding Source conveyed, and Installation Information provided,
++in accord with this section must be in a format that is publicly
++documented (and with an implementation available to the public in
++source code form), and must require no special password or key for
++unpacking, reading or copying.
++
++  7. Additional Terms.
++
++  "Additional permissions" are terms that supplement the terms of this
++License by making exceptions from one or more of its conditions.
++Additional permissions that are applicable to the entire Program shall
++be treated as though they were included in this License, to the extent
++that they are valid under applicable law.  If additional permissions
++apply only to part of the Program, that part may be used separately
++under those permissions, but the entire Program remains governed by
++this License without regard to the additional permissions.
++
++  When you convey a copy of a covered work, you may at your option
++remove any additional permissions from that copy, or from any part of
++it.  (Additional permissions may be written to require their own
++removal in certain cases when you modify the work.)  You may place
++additional permissions on material, added by you to a covered work,
++for which you have or can give appropriate copyright permission.
++
++  Notwithstanding any other provision of this License, for material you
++add to a covered work, you may (if authorized by the copyright holders of
++that material) supplement the terms of this License with terms:
++
++    a) Disclaiming warranty or limiting liability differently from the
++    terms of sections 15 and 16 of this License; or
++
++    b) Requiring preservation of specified reasonable legal notices or
++    author attributions in that material or in the Appropriate Legal
++    Notices displayed by works containing it; or
++
++    c) Prohibiting misrepresentation of the origin of that material, or
++    requiring that modified versions of such material be marked in
++    reasonable ways as different from the original version; or
++
++    d) Limiting the use for publicity purposes of names of licensors or
++    authors of the material; or
++
++    e) Declining to grant rights under trademark law for use of some
++    trade names, trademarks, or service marks; or
++
++    f) Requiring indemnification of licensors and authors of that
++    material by anyone who conveys the material (or modified versions of
++    it) with contractual assumptions of liability to the recipient, for
++    any liability that these contractual assumptions directly impose on
++    those licensors and authors.
++
++  All other non-permissive additional terms are considered "further
++restrictions" within the meaning of section 10.  If the Program as you
++received it, or any part of it, contains a notice stating that it is
++governed by this License along with a term that is a further
++restriction, you may remove that term.  If a license document contains
++a further restriction but permits relicensing or conveying under this
++License, you may add to a covered work material governed by the terms
++of that license document, provided that the further restriction does
++not survive such relicensing or conveying.
++
++  If you add terms to a covered work in accord with this section, you
++must place, in the relevant source files, a statement of the
++additional terms that apply to those files, or a notice indicating
++where to find the applicable terms.
++
++  Additional terms, permissive or non-permissive, may be stated in the
++form of a separately written license, or stated as exceptions;
++the above requirements apply either way.
++
++  8. Termination.
++
++  You may not propagate or modify a covered work except as expressly
++provided under this License.  Any attempt otherwise to propagate or
++modify it is void, and will automatically terminate your rights under
++this License (including any patent licenses granted under the third
++paragraph of section 11).
++
++  However, if you cease all violation of this License, then your
++license from a particular copyright holder is reinstated (a)
++provisionally, unless and until the copyright holder explicitly and
++finally terminates your license, and (b) permanently, if the copyright
++holder fails to notify you of the violation by some reasonable means
++prior to 60 days after the cessation.
++
++  Moreover, your license from a particular copyright holder is
++reinstated permanently if the copyright holder notifies you of the
++violation by some reasonable means, this is the first time you have
++received notice of violation of this License (for any work) from that
++copyright holder, and you cure the violation prior to 30 days after
++your receipt of the notice.
++
++  Termination of your rights under this section does not terminate the
++licenses of parties who have received copies or rights from you under
++this License.  If your rights have been terminated and not permanently
++reinstated, you do not qualify to receive new licenses for the same
++material under section 10.
++
++  9. Acceptance Not Required for Having Copies.
++
++  You are not required to accept this License in order to receive or
++run a copy of the Program.  Ancillary propagation of a covered work
++occurring solely as a consequence of using peer-to-peer transmission
++to receive a copy likewise does not require acceptance.  However,
++nothing other than this License grants you permission to propagate or
++modify any covered work.  These actions infringe copyright if you do
++not accept this License.  Therefore, by modifying or propagating a
++covered work, you indicate your acceptance of this License to do so.
++
++  10. Automatic Licensing of Downstream Recipients.
++
++  Each time you convey a covered work, the recipient automatically
++receives a license from the original licensors, to run, modify and
++propagate that work, subject to this License.  You are not responsible
++for enforcing compliance by third parties with this License.
++
++  An "entity transaction" is a transaction transferring control of an
++organization, or substantially all assets of one, or subdividing an
++organization, or merging organizations.  If propagation of a covered
++work results from an entity transaction, each party to that
++transaction who receives a copy of the work also receives whatever
++licenses to the work the party's predecessor in interest had or could
++give under the previous paragraph, plus a right to possession of the
++Corresponding Source of the work from the predecessor in interest, if
++the predecessor has it or can get it with reasonable efforts.
++
++  You may not impose any further restrictions on the exercise of the
++rights granted or affirmed under this License.  For example, you may
++not impose a license fee, royalty, or other charge for exercise of
++rights granted under this License, and you may not initiate litigation
++(including a cross-claim or counterclaim in a lawsuit) alleging that
++any patent claim is infringed by making, using, selling, offering for
++sale, or importing the Program or any portion of it.
++
++  11. Patents.
++
++  A "contributor" is a copyright holder who authorizes use under this
++License of the Program or a work on which the Program is based.  The
++work thus licensed is called the contributor's "contributor version".
++
++  A contributor's "essential patent claims" are all patent claims
++owned or controlled by the contributor, whether already acquired or
++hereafter acquired, that would be infringed by some manner, permitted
++by this License, of making, using, or selling its contributor version,
++but do not include claims that would be infringed only as a
++consequence of further modification of the contributor version.  For
++purposes of this definition, "control" includes the right to grant
++patent sublicenses in a manner consistent with the requirements of
++this License.
++
++  Each contributor grants you a non-exclusive, worldwide, royalty-free
++patent license under the contributor's essential patent claims, to
++make, use, sell, offer for sale, import and otherwise run, modify and
++propagate the contents of its contributor version.
++
++  In the following three paragraphs, a "patent license" is any express
++agreement or commitment, however denominated, not to enforce a patent
++(such as an express permission to practice a patent or covenant not to
++sue for patent infringement).  To "grant" such a patent license to a
++party means to make such an agreement or commitment not to enforce a
++patent against the party.
++
++  If you convey a covered work, knowingly relying on a patent license,
++and the Corresponding Source of the work is not available for anyone
++to copy, free of charge and under the terms of this License, through a
++publicly available network server or other readily accessible means,
++then you must either (1) cause the Corresponding Source to be so
++available, or (2) arrange to deprive yourself of the benefit of the
++patent license for this particular work, or (3) arrange, in a manner
++consistent with the requirements of this License, to extend the patent
++license to downstream recipients.  "Knowingly relying" means you have
++actual knowledge that, but for the patent license, your conveying the
++covered work in a country, or your recipient's use of the covered work
++in a country, would infringe one or more identifiable patents in that
++country that you have reason to believe are valid.
++
++  If, pursuant to or in connection with a single transaction or
++arrangement, you convey, or propagate by procuring conveyance of, a
++covered work, and grant a patent license to some of the parties
++receiving the covered work authorizing them to use, propagate, modify
++or convey a specific copy of the covered work, then the patent license
++you grant is automatically extended to all recipients of the covered
++work and works based on it.
++
++  A patent license is "discriminatory" if it does not include within
++the scope of its coverage, prohibits the exercise of, or is
++conditioned on the non-exercise of one or more of the rights that are
++specifically granted under this License.  You may not convey a covered
++work if you are a party to an arrangement with a third party that is
++in the business of distributing software, under which you make payment
++to the third party based on the extent of your activity of conveying
++the work, and under which the third party grants, to any of the
++parties who would receive the covered work from you, a discriminatory
++patent license (a) in connection with copies of the covered work
++conveyed by you (or copies made from those copies), or (b) primarily
++for and in connection with specific products or compilations that
++contain the covered work, unless you entered into that arrangement,
++or that patent license was granted, prior to 28 March 2007.
++
++  Nothing in this License shall be construed as excluding or limiting
++any implied license or other defenses to infringement that may
++otherwise be available to you under applicable patent law.
++
++  12. No Surrender of Others' Freedom.
++
++  If conditions are imposed on you (whether by court order, agreement or
++otherwise) that contradict the conditions of this License, they do not
++excuse you from the conditions of this License.  If you cannot convey a
++covered work so as to satisfy simultaneously your obligations under this
++License and any other pertinent obligations, then as a consequence you may
++not convey it at all.  For example, if you agree to terms that obligate you
++to collect a royalty for further conveying from those to whom you convey
++the Program, the only way you could satisfy both those terms and this
++License would be to refrain entirely from conveying the Program.
++
++  13. Use with the GNU Affero General Public License.
++
++  Notwithstanding any other provision of this License, you have
++permission to link or combine any covered work with a work licensed
++under version 3 of the GNU Affero General Public License into a single
++combined work, and to convey the resulting work.  The terms of this
++License will continue to apply to the part which is the covered work,
++but the special requirements of the GNU Affero General Public License,
++section 13, concerning interaction through a network will apply to the
++combination as such.
++
++  14. Revised Versions of this License.
++
++  The Free Software Foundation may publish revised and/or new versions of
++the GNU General Public License from time to time.  Such new versions will
++be similar in spirit to the present version, but may differ in detail to
++address new problems or concerns.
++
++  Each version is given a distinguishing version number.  If the
++Program specifies that a certain numbered version of the GNU General
++Public License "or any later version" applies to it, you have the
++option of following the terms and conditions either of that numbered
++version or of any later version published by the Free Software
++Foundation.  If the Program does not specify a version number of the
++GNU General Public License, you may choose any version ever published
++by the Free Software Foundation.
++
++  If the Program specifies that a proxy can decide which future
++versions of the GNU General Public License can be used, that proxy's
++public statement of acceptance of a version permanently authorizes you
++to choose that version for the Program.
++
++  Later license versions may give you additional or different
++permissions.  However, no additional obligations are imposed on any
++author or copyright holder as a result of your choosing to follow a
++later version.
++
++  15. Disclaimer of Warranty.
++
++  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
++APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
++HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
++OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
++THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
++IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
++ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
++
++  16. Limitation of Liability.
++
++  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
++WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
++THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
++GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
++USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
++DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
++PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
++EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
++SUCH DAMAGES.
++
++  17. Interpretation of Sections 15 and 16.
++
++  If the disclaimer of warranty and limitation of liability provided
++above cannot be given local legal effect according to their terms,
++reviewing courts shall apply local law that most closely approximates
++an absolute waiver of all civil liability in connection with the
++Program, unless a warranty or assumption of liability accompanies a
++copy of the Program in return for a fee.
++
++                     END OF TERMS AND CONDITIONS
++
++            How to Apply These Terms to Your New Programs
++
++  If you develop a new program, and you want it to be of the greatest
++possible use to the public, the best way to achieve this is to make it
++free software which everyone can redistribute and change under these terms.
++
++  To do so, attach the following notices to the program.  It is safest
++to attach them to the start of each source file to most effectively
++state the exclusion of warranty; and each file should have at least
++the "copyright" line and a pointer to where the full notice is found.
++
++    <one line to give the program's name and a brief idea of what it does.>
++    Copyright (C) <year>  <name of author>
++
++    This program is free software: you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation, either version 3 of the License, or
++    (at your option) any later version.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program.  If not, see <http://www.gnu.org/licenses/>.
++
++Also add information on how to contact you by electronic and paper mail.
++
++  If the program does terminal interaction, make it output a short
++notice like this when it starts in an interactive mode:
++
++    <program>  Copyright (C) <year>  <name of author>
++    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
++    This is free software, and you are welcome to redistribute it
++    under certain conditions; type `show c' for details.
++
++The hypothetical commands `show w' and `show c' should show the appropriate
++parts of the General Public License.  Of course, your program's commands
++might be different; for a GUI interface, you would use an "about box".
++
++  You should also get your employer (if you work as a programmer) or school,
++if any, to sign a "copyright disclaimer" for the program, if necessary.
++For more information on this, and how to apply and follow the GNU GPL, see
++<http://www.gnu.org/licenses/>.
++
++  The GNU General Public License does not permit incorporating your program
++into proprietary programs.  If your program is a subroutine library, you
++may consider it more useful to permit linking proprietary applications with
++the library.  If this is what you want to do, use the GNU Lesser General
++Public License instead of this License.  But first, please read
++<http://www.gnu.org/philosophy/why-not-lgpl.html>.
 diff --git a/apps/BUILD.gn b/apps/BUILD.gn
 index bba3724ca1d0..18aa35d48877 100644
 --- a/apps/BUILD.gn
@@ -580,6 +1283,24 @@ index c38d03923119..d9990cc8e791 100644
      public_deps += [ "//chrome/browser/resources:welcome_resources" ]
    }
  
+diff --git a/chrome/android/features/tab_ui/java/src/org/chromium/chrome/browser/tasks/tab_groups/TabGroupModelFilter.java b/chrome/android/features/tab_ui/java/src/org/chromium/chrome/browser/tasks/tab_groups/TabGroupModelFilter.java
+index 1b00b48e0ae2..bb745ff50dd8 100644
+--- a/chrome/android/features/tab_ui/java/src/org/chromium/chrome/browser/tasks/tab_groups/TabGroupModelFilter.java
++++ b/chrome/android/features/tab_ui/java/src/org/chromium/chrome/browser/tasks/tab_groups/TabGroupModelFilter.java
+@@ -496,6 +496,13 @@ public class TabGroupModelFilter extends TabModelFilter {
+         return getRelatedTabList(group.getTabIdList());
+     }
+ 
++    // Kiwi addition to the API
++    @Override
++    public int getLastNonExtensionActiveIndex() {
++        return INVALID_TAB_INDEX;
++    }
++
++
+     /**
+      * This method returns all tabs in a tab group with reference to {@code tabRootId} as group id.
+      *
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 index 1a7a78173b33..9e0cce5a3555 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
@@ -593,6 +1314,245 @@ index 1a7a78173b33..9e0cce5a3555 100644
          // In cases where the tab model is initialized, attempt to reuse an existing NTP if
          // available before attempting to create a new one.
          TabModel normalTabModel = getTabModelSelector().getModel(false);
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/ChromeTabCreator.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/ChromeTabCreator.java
+index 31a3d5674167..a37d42845c50 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/ChromeTabCreator.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/ChromeTabCreator.java
+@@ -33,6 +33,8 @@ import org.chromium.content_public.common.Referrer;
+ import org.chromium.ui.base.PageTransition;
+ import org.chromium.ui.base.WindowAndroid;
+ 
++import android.animation.ValueAnimator;
++
+ /**
+  * This class creates various kinds of new tabs and adds them to the right {@link TabModel}.
+  */
+@@ -104,6 +106,11 @@ public class ChromeTabCreator extends TabCreatorManager.TabCreator {
+     private Tab createNewTab(LoadUrlParams loadUrlParams, @TabLaunchType int type, Tab parent,
+             int position, Intent intent) {
+         try {
++            try {
++                ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 0.0f);
++            } catch (Throwable t) {
++
++            }
+             TraceEvent.begin("ChromeTabCreator.createNewTab");
+             int parentId = parent != null ? parent.getId() : Tab.INVALID_TAB_ID;
+ 
+@@ -191,6 +198,12 @@ public class ChromeTabCreator extends TabCreatorManager.TabCreator {
+             }
+ 
+             mTabModel.addTab(tab, position, type);
++
++            try {
++                ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 0.60f);
++            } catch (Throwable t) {
++
++            }
+             return tab;
+         } finally {
+             TraceEvent.end("ChromeTabCreator.createNewTab");
+@@ -204,6 +217,12 @@ public class ChromeTabCreator extends TabCreatorManager.TabCreator {
+         int parentId = parent != null ? parent.getId() : Tab.INVALID_TAB_ID;
+         if (mTabModel.isClosurePending(parentId)) return false;
+ 
++        try {
++            ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 0.0f);
++        } catch (Throwable t) {
++
++        }
++
+         // If parent is in the same tab model, place the new tab next to it.
+         int position = TabModel.INVALID_TAB_INDEX;
+         int index = TabModelUtils.getTabIndexById(mTabModel, parentId);
+@@ -222,6 +241,13 @@ public class ChromeTabCreator extends TabCreatorManager.TabCreator {
+                           .setInitiallyHidden(!openInForeground)
+                           .build();
+         mTabModel.addTab(tab, position, type);
++
++        try {
++            ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 0.60f);
++        } catch (Throwable t) {
++
++        }
++
+         return true;
+     }
+ 
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModel.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModel.java
+index 5259e1a96d40..d48ae81d5688 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModel.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModel.java
+@@ -82,6 +82,11 @@ public class EmptyTabModel implements TabModel {
+         return INVALID_TAB_INDEX;
+     }
+ 
++    @Override
++    public int getLastNonExtensionActiveIndex() {
++        return INVALID_TAB_INDEX;
++    }
++
+     @Override
+     public int index() {
+         return INVALID_TAB_INDEX;
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModelFilter.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModelFilter.java
+index 630671f8c9bf..105021afa0e2 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModelFilter.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/EmptyTabModelFilter.java
+@@ -31,6 +31,12 @@ public class EmptyTabModelFilter extends TabModelFilter {
+     @Override
+     protected void resetFilterStateInternal() {}
+ 
++    // Kiwi addition to the API
++    @Override
++    public int getLastNonExtensionActiveIndex() {
++        return INVALID_TAB_INDEX;
++    }
++
+     @Override
+     protected void removeTab(Tab tab) {}
+ 
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/IncognitoTabModel.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/IncognitoTabModel.java
+index 314676700e9f..95e772cf54ae 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/IncognitoTabModel.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/IncognitoTabModel.java
+@@ -157,6 +157,11 @@ public class IncognitoTabModel implements TabModel {
+         destroyIncognitoIfNecessary();
+     }
+ 
++    @Override
++    public int getLastNonExtensionActiveIndex() {
++        return mDelegateModel.index();
++    }
++
+     @Override
+     public void closeAllTabs(boolean allowDelegation, boolean uponExit) {
+         mDelegateModel.closeAllTabs(allowDelegation, uponExit);
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/SingleTabModel.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/SingleTabModel.java
+index c0d9c86921f4..7b6c1c7928b5 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/SingleTabModel.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/SingleTabModel.java
+@@ -91,6 +91,11 @@ public class SingleTabModel implements TabModel {
+         return mTab != null ? 0 : INVALID_TAB_INDEX;
+     }
+ 
++    @Override
++    public int getLastNonExtensionActiveIndex() {
++        return mTab != null ? 0 : INVALID_TAB_INDEX;
++    }
++
+     @Override
+     public boolean closeTab(Tab tab) {
+         return closeTab(tab, false, false, false);
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabCreatorManager.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabCreatorManager.java
+index de7adb86f85b..c017ffe80c72 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabCreatorManager.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabCreatorManager.java
+@@ -13,6 +13,9 @@ import org.chromium.chrome.browser.util.UrlConstants;
+ import org.chromium.content_public.browser.LoadUrlParams;
+ import org.chromium.content_public.browser.WebContents;
+ 
++import org.chromium.chrome.browser.partnercustomizations.HomepageManager;
++
++
+ /**
+  * An interface to return a {@link TabCreator} either for regular or incognito tabs.
+  */
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabList.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabList.java
+index dec813838c3a..88eaef914c49 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabList.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabList.java
+@@ -24,6 +24,8 @@ public interface TabList {
+      */
+     int index();
+ 
++    int getLastNonExtensionActiveIndex();
++
+     /**
+      * @return the number of open tabs in this model
+      */
+@@ -49,4 +51,4 @@ public interface TabList {
+      *              closure.
+      */
+     boolean isClosurePending(int tabId);
+-}
+\ No newline at end of file
++}
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelImpl.java
+index 085d43e56850..0b2f11119802 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelImpl.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelImpl.java
+@@ -22,6 +22,7 @@ import org.chromium.content_public.browser.WebContents;
+ import org.chromium.content_public.common.ResourceRequestBody;
+ import org.chromium.ui.mojom.WindowOpenDisposition;
+ 
++import android.util.Log;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+@@ -668,6 +669,26 @@ public class TabModelImpl extends TabModelJniBridge {
+             return INVALID_TAB_INDEX;
+         }
+ 
++        @Override
++        public int getLastNonExtensionActiveIndex() {
++//            Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 1");
++            if (TabModelImpl.this.getLastNonExtensionActiveIndex() != INVALID_TAB_INDEX) {
++//                Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 1a");
++                Tab parentTab = findTabInAllTabModels(TabModelUtils.getCurrentTab(this).getParentId());
++//                Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 1b");
++                if (parentTab != null) {
++//                  Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 2a");
++                  return mRewoundTabs.indexOf(parentTab);
++                }
++//                Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 3");
++                return mRewoundTabs.indexOf(TabModelUtils.getCurrentTab(TabModelImpl.this));
++            }
++//            Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 4");
++            if (!mRewoundTabs.isEmpty()) return 0;
++//            Log.i("EXTENSIONS", "TabModelImpl - getLastNonExtensionActiveIndex - Step 5");
++            return INVALID_TAB_INDEX;
++        }
++
+         @Override
+         public int getCount() {
+             return mRewoundTabs.size();
+@@ -827,6 +848,20 @@ public class TabModelImpl extends TabModelJniBridge {
+         return mIndex;
+     }
+ 
++    @Override
++    public int getLastNonExtensionActiveIndex() {
++//        Log.i("EXTENSIONS", "TabModelImpl - (secondary) getLastNonExtensionActiveIndex");
++        int result = mIndex;
++//        Log.i("EXTENSIONS", "TabModelImpl - (secondary) getLastNonExtensionActiveIndex - " + mIndex);
++        Tab currentTab = getTabAt(mIndex);
++        // We get the adjacent tab in case we are currently on a chrome-extension page
++        if (currentTab != null && currentTab.getUrl() != null && (currentTab.getUrl().contains("chrome-extension://")))
++          result = mIndex - 1;
++        if (result < 0)
++          return 0;
++        return result;
++    }
++
+     @Override
+     protected boolean isSessionRestoreInProgress() {
+         return mModelDelegate.isSessionRestoreInProgress();
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelJniBridge.java b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelJniBridge.java
+index a624c58b7308..2f89f02e1186 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelJniBridge.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabModelJniBridge.java
+@@ -153,6 +153,10 @@ public abstract class TabModelJniBridge implements TabModel {
+     @CalledByNative
+     public abstract int index();
+ 
++    @Override
++    @CalledByNative
++    public abstract int getLastNonExtensionActiveIndex();
++
+     /** @return Whether or not a sync session is currently being restored. */
+     @CalledByNative
+     protected abstract boolean isSessionRestoreInProgress();
 diff --git a/chrome/app/android/chrome_main_delegate_android.cc b/chrome/app/android/chrome_main_delegate_android.cc
 index fe6940b6dc3e..1acd54159397 100644
 --- a/chrome/app/android/chrome_main_delegate_android.cc
@@ -1382,7 +2342,7 @@ index 7b6f1aee39f3..f4b6823d6470 100644
            <structure type="chrome_scaled_image" name="IDR_WEBSTORE_ICON_16" file="google_chrome/webstore_icon_16.png" />
            <structure type="chrome_scaled_image" name="IDR_WEBSTORE_ICON_24" file="google_chrome/webstore_icon_24.png" />
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
-index d5684b2e3301..5ade8db1ef52 100644
+index d5684b2e3301..fc5520877c69 100644
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
 @@ -407,7 +407,6 @@ jumbo_static_library("browser") {
@@ -1410,7 +2370,15 @@ index d5684b2e3301..5ade8db1ef52 100644
      "sessions/session_tab_helper.cc",
      "sessions/session_tab_helper.h",
      "sessions/tab_restore_service_factory.cc",
-@@ -3011,7 +3011,8 @@ jumbo_static_library("browser") {
+@@ -2273,6 +2273,7 @@ jumbo_static_library("browser") {
+       "android/android_theme_resources.h",
+       "android/app_hooks.cc",
+       "android/app_hooks.h",
++      "android/appmenu/app_menu.cc",
+       "android/autofill_assistant/assistant_collect_user_data_delegate.cc",
+       "android/autofill_assistant/assistant_collect_user_data_delegate.h",
+       "android/autofill_assistant/assistant_form_delegate.cc",
+@@ -3011,7 +3012,8 @@ jumbo_static_library("browser") {
        ]
        deps += [ "//chrome/android/modules/dev_ui/provider:native" ]
      }
@@ -1420,7 +2388,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      sources += [
        "accessibility/invert_bubble_prefs.cc",
        "accessibility/invert_bubble_prefs.h",
-@@ -3059,19 +3060,13 @@ jumbo_static_library("browser") {
+@@ -3059,19 +3061,13 @@ jumbo_static_library("browser") {
        "badging/badge_manager_delegate.h",
        "badging/badge_manager_factory.cc",
        "badging/badge_manager_factory.h",
@@ -1442,7 +2410,7 @@ index d5684b2e3301..5ade8db1ef52 100644
        "component_updater/tls_deprecation_config_component_installer.cc",
        "component_updater/tls_deprecation_config_component_installer.h",
        "custom_handlers/register_protocol_handler_permission_request.cc",
-@@ -3153,6 +3148,7 @@ jumbo_static_library("browser") {
+@@ -3153,6 +3149,7 @@ jumbo_static_library("browser") {
        "first_run/first_run_dialog.h",
        "first_run/first_run_internal.h",
        "first_run/first_run_internal_linux.cc",
@@ -1450,7 +2418,7 @@ index d5684b2e3301..5ade8db1ef52 100644
        "first_run/first_run_internal_mac.mm",
        "first_run/first_run_internal_win.cc",
        "font_family_cache.cc",
-@@ -3295,7 +3291,6 @@ jumbo_static_library("browser") {
+@@ -3295,7 +3292,6 @@ jumbo_static_library("browser") {
        "metrics/desktop_session_duration/desktop_session_duration_tracker.h",
        "metrics/first_web_contents_profiler.cc",
        "metrics/first_web_contents_profiler.h",
@@ -1458,7 +2426,7 @@ index d5684b2e3301..5ade8db1ef52 100644
        "metrics/tab_stats_data_store.cc",
        "metrics/tab_stats_data_store.h",
        "metrics/tab_stats_tracker.cc",
-@@ -3308,6 +3303,7 @@ jumbo_static_library("browser") {
+@@ -3308,6 +3304,7 @@ jumbo_static_library("browser") {
        "notifications/profile_notification.cc",
        "notifications/profile_notification.h",
        "obsolete_system/obsolete_system.h",
@@ -1466,7 +2434,7 @@ index d5684b2e3301..5ade8db1ef52 100644
        "obsolete_system/obsolete_system_linux.cc",
        "obsolete_system/obsolete_system_mac.cc",
        "obsolete_system/obsolete_system_win.cc",
-@@ -3676,7 +3672,7 @@ jumbo_static_library("browser") {
+@@ -3676,7 +3673,7 @@ jumbo_static_library("browser") {
          "chrome_browser_main_posix.h",
          "first_run/first_run_internal_posix.cc",
          "importer/firefox_profile_lock_posix.cc",
@@ -1475,7 +2443,7 @@ index d5684b2e3301..5ade8db1ef52 100644
          "task_manager/sampling/shared_sampler_posix.cc",
        ]
      }
-@@ -4116,7 +4112,7 @@ jumbo_static_library("browser") {
+@@ -4116,7 +4113,7 @@ jumbo_static_library("browser") {
      ]
    }
  
@@ -1484,7 +2452,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      sources += [
        "browser_switcher/alternative_browser_driver.h",
        "browser_switcher/alternative_browser_driver_win.cc",
-@@ -4142,7 +4138,7 @@ jumbo_static_library("browser") {
+@@ -4142,7 +4139,7 @@ jumbo_static_library("browser") {
      defines += [ "USE_CRAS" ]
    }
  
@@ -1493,7 +2461,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      sources += [
        "first_run/upgrade_util.cc",
        "first_run/upgrade_util.h",
-@@ -4165,14 +4161,6 @@ jumbo_static_library("browser") {
+@@ -4165,14 +4162,6 @@ jumbo_static_library("browser") {
        "notifications/screen_lock_notification_blocker.cc",
        "notifications/screen_lock_notification_blocker.h",
        "platform_util.cc",
@@ -1508,7 +2476,7 @@ index d5684b2e3301..5ade8db1ef52 100644
        "policy/cloud/user_policy_signin_service_internal.h",
        "profiles/avatar_menu.cc",
        "profiles/avatar_menu.h",
-@@ -4202,7 +4190,8 @@ jumbo_static_library("browser") {
+@@ -4202,7 +4191,8 @@ jumbo_static_library("browser") {
        "upgrade_detector/upgrade_detector_impl.cc",
        "upgrade_detector/upgrade_detector_impl.h",
      ]
@@ -1518,7 +2486,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      sources += [
        "media/protected_media_identifier_permission_context.cc",
        "media/protected_media_identifier_permission_context.h",
-@@ -4265,6 +4254,10 @@ jumbo_static_library("browser") {
+@@ -4265,6 +4255,10 @@ jumbo_static_library("browser") {
      deps += [ "//ui/views" ]
    }
  
@@ -1529,7 +2497,7 @@ index d5684b2e3301..5ade8db1ef52 100644
    if (use_aura) {
      # Cross-platform Aura files.
      sources += [
-@@ -4297,6 +4290,7 @@ jumbo_static_library("browser") {
+@@ -4297,6 +4291,7 @@ jumbo_static_library("browser") {
        "background/background_application_list_model.h",
        "background/background_mode_manager.cc",
        "background/background_mode_manager.h",
@@ -1537,7 +2505,7 @@ index d5684b2e3301..5ade8db1ef52 100644
        "background/background_mode_manager_aura.cc",
        "background/background_mode_manager_chromeos.cc",
        "background/background_mode_manager_mac.mm",
-@@ -5067,7 +5061,7 @@ jumbo_static_library("browser") {
+@@ -5067,7 +5062,7 @@ jumbo_static_library("browser") {
      }
    }
  
@@ -1546,7 +2514,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      sources += [
        "sessions/session_restore.cc",
        "sessions/session_restore.h",
-@@ -5105,6 +5099,7 @@ jumbo_static_library("browser") {
+@@ -5105,6 +5100,7 @@ jumbo_static_library("browser") {
        "spellchecker/spellcheck_language_policy_handler.h",
        "spellchecker/spellcheck_service.cc",
        "spellchecker/spellcheck_service.h",
@@ -1554,7 +2522,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      ]
  
      if (use_browser_spellchecker && enable_spelling_service) {
-@@ -5438,7 +5433,7 @@ grit("resources") {
+@@ -5438,7 +5434,7 @@ grit("resources") {
      }
    }
  
@@ -1563,7 +2531,7 @@ index d5684b2e3301..5ade8db1ef52 100644
      deps += [
        "//chrome/browser/resources/discards:discards_resources_gen",
        "//chrome/browser/resources/management:polymer3_elements",
-@@ -5471,7 +5466,7 @@ grit("resources") {
+@@ -5471,7 +5467,7 @@ grit("resources") {
      ]
    }
  
@@ -1572,6 +2540,345 @@ index d5684b2e3301..5ade8db1ef52 100644
      deps += [
        "//chrome/browser/resources/chromeos/bluetooth_pairing_dialog:build",
        "//chrome/browser/resources/chromeos/internet_config_dialog:build",
+diff --git a/chrome/browser/android/appmenu/app_menu.cc b/chrome/browser/android/appmenu/app_menu.cc
+new file mode 100644
+index 000000000000..3d41e4c0d9b6
+--- /dev/null
++++ b/chrome/browser/android/appmenu/app_menu.cc
+@@ -0,0 +1,333 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <jni.h>
++#include <stddef.h>
++
++#include <memory>
++#include <set>
++#include <string>
++#include <vector>
++#include <utility>
++
++#include "base/android/jni_android.h"
++#include "base/android/jni_array.h"
++#include "base/android/jni_string.h"
++#include "base/android/jni_weak_ref.h"
++#include "base/feature_list.h"
++#include "base/metrics/histogram_macros.h"
++#include "base/trace_event/trace_event.h"
++#include "base/macros.h"
++#include "base/memory/weak_ptr.h"
++#include "base/scoped_observer.h"
++#include "base/values.h"
++#include "chrome/browser/browsing_data/browsing_data_important_sites_util.h"
++#include "chrome/browser/browsing_data/chrome_browsing_data_remover_delegate.h"
++#include "chrome/browser/engagement/important_sites_util.h"
++#include "chrome/browser/history/web_history_service_factory.h"
++#include "chrome/browser/profiles/profile_android.h"
++#include "chrome/browser/sync/profile_sync_service_factory.h"
++#include "chrome/common/channel_info.h"
++#include "chrome/common/chrome_features.h"
++#include "components/sync/driver/profile_sync_service.h"
++#include "components/browsing_data/core/history_notice_utils.h"
++#include "components/browsing_data/core/pref_names.h"
++#include "components/prefs/pref_service.h"
++#include "content/public/browser/browser_context.h"
++#include "chrome/browser/extensions/extension_action_manager.h"
++#include "chrome/browser/extensions/extension_action_runner.h"
++#include "chrome/browser/extensions/extension_action_icon_factory.h"
++#include "chrome/browser/extensions/extension_context_menu_model.h"
++#include "chrome/browser/ui/toolbar/toolbar_action_view_controller.h"
++#include "extensions/browser/extension_host_observer.h"
++#include "ui/gfx/image/image.h"
++#include "base/bind.h"
++#include "base/command_line.h"
++#include "base/strings/string_util.h"
++#include "base/strings/utf_string_conversions.h"
++#include "base/threading/thread_task_runner_handle.h"
++#include "base/values.h"
++#include "base/android/jni_android.h"
++#include "base/android/jni_array.h"
++#include "base/android/jni_string.h"
++#include "chrome/browser/extensions/extension_tab_util.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/common/chrome_switches.h"
++#include "chrome/common/extensions/extension_constants.h"
++#include "chrome/common/url_constants.h"
++#include "components/favicon/core/favicon_service.h"
++#include "components/favicon_base/favicon_util.h"
++#include "components/pref_registry/pref_registry_syncable.h"
++#include "components/prefs/pref_service.h"
++#include "components/prefs/scoped_user_pref_update.h"
++#include "chrome/browser/extensions/tab_helper.h"
++#include "content/public/browser/navigation_controller.h"
++#include "content/public/browser/web_contents.h"
++#include "content/public/browser/web_ui.h"
++#include "content/public/common/bindings_policy.h"
++#include "extensions/browser/extension_icon_placeholder.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/browser/extension_util.h"
++#include "extensions/browser/image_loader.h"
++#include "extensions/common/extension.h"
++#include "extensions/common/extension_icon_set.h"
++#include "extensions/common/extension_resource.h"
++#include "extensions/common/manifest_handlers/icons_handler.h"
++#include "extensions/common/manifest_handlers/incognito_info.h"
++#include "net/base/file_stream.h"
++#include "third_party/skia/include/core/SkBitmap.h"
++#include "ui/base/page_transition_types.h"
++#include "chrome/browser/sessions/session_tab_helper.h"
++#include "ui/gfx/codec/png_codec.h"
++#include "ui/gfx/favicon_size.h"
++#include "ui/gfx/image/image_skia.h"
++#include "chrome/browser/extensions/extension_action_runner.h"
++#include "chrome/browser/ui/extensions/icon_with_badge_image_source.h"
++#include "chrome/browser/ui/extensions/extension_action_view_controller.h"
++#include "ui/gfx/font_list.h"
++#include "ui/gfx/geometry/rect.h"
++#include "ui/gfx/geometry/rect_f.h"
++#include "ui/gfx/geometry/size.h"
++#include "ui/gfx/canvas.h"
++#include "ui/gfx/geometry/insets.h"
++#include "ui/gfx/image/canvas_image_source.h"
++#include "ui/gfx/skia_util.h"
++#include "ui/base/webui/web_ui_util.h"
++#include "chrome/browser/extensions/api/extension_action/extension_action_api.h"
++
++#include "chrome/browser/ui/android/appmenu/internal/jni_headers/AppMenu_jni.h"
++
++using base::android::JavaParamRef;
++
++using base::android::AttachCurrentThread;
++using base::android::ConvertJavaStringToUTF8;
++using base::android::ConvertUTF8ToJavaString;
++using base::android::HasException;
++using base::android::JavaByteArrayToByteVector;
++using base::android::JavaRef;
++using base::android::ScopedJavaLocalRef;
++using base::android::ToJavaByteArray;
++
++bool PageActionWantsToRun(
++    content::WebContents* web_contents, ExtensionAction* extension_action_) {
++  return extension_action_->action_type() ==
++             extensions::ActionInfo::TYPE_PAGE &&
++         extension_action_->GetIsVisible(
++             SessionTabHelper::IdForTab(web_contents).id());
++}
++
++
++bool HasBeenBlocked(
++    content::WebContents* web_contents, const extensions::Extension* extension) {
++  extensions::ExtensionActionRunner* action_runner =
++    extensions::ExtensionActionRunner::GetForWebContents(web_contents);
++  return action_runner && action_runner->WantsToRun(extension);
++}
++
++bool IsEnabled(
++    content::WebContents* web_contents, const extensions::Extension* extension, ExtensionAction* extension_action_) {
++  return extension_action_->GetIsVisible(
++             SessionTabHelper::IdForTab(web_contents).id()) ||
++         HasBeenBlocked(web_contents, extension);
++}
++
++gfx::Image GetIcon(int tab_id, ExtensionAction* extension_action_) {
++  gfx::Image icon = extension_action_->GetExplicitlySetIcon(tab_id);
++  if (!icon.IsEmpty())
++    return icon;
++
++  icon = extension_action_->GetDeclarativeIcon(tab_id);
++  if (!icon.IsEmpty())
++    return icon;
++
++  return extension_action_->GetDefaultIconImage();
++}
++
++std::unique_ptr<IconWithBadgeImageSource> GetIconImageSource(
++    const extensions::Extension* extension,
++    ExtensionAction* extension_action_,
++    content::WebContents* web_contents,
++    const gfx::Size& size) {
++  int tab_id = SessionTabHelper::IdForTab(web_contents).id();
++  std::unique_ptr<IconWithBadgeImageSource> image_source(
++      new IconWithBadgeImageSource(size));
++
++  GetIcon(tab_id, extension_action_);
++  image_source->SetIcon(GetIcon(tab_id, extension_action_));
++
++  std::unique_ptr<IconWithBadgeImageSource::Badge> badge;
++  std::string badge_text = extension_action_->GetExplicitlySetBadgeText(tab_id);
++  if (!badge_text.empty()) {
++    badge.reset(new IconWithBadgeImageSource::Badge(
++            badge_text,
++            extension_action_->GetBadgeTextColor(tab_id),
++            extension_action_->GetBadgeBackgroundColor(tab_id)));
++  }
++  image_source->SetBadge(std::move(badge));
++
++  // If the extension doesn't want to run on the active web contents, we
++  // grayscale it to indicate that.
++  image_source->set_grayscale(!IsEnabled(web_contents, extension, extension_action_));
++
++  // If the action *does* want to run on the active web contents and is also
++  // overflowed, we add a decoration so that the user can see which overflowed
++  // action wants to run (since they wouldn't be able to see the change from
++  // grayscale to color).
++  bool is_overflow = false;
++
++  bool has_blocked_actions = HasBeenBlocked(web_contents, extension);
++//  image_source->set_state(state);
++  image_source->set_paint_blocked_actions_decoration(has_blocked_actions);
++  image_source->set_paint_page_action_decoration(
++      !has_blocked_actions && is_overflow &&
++      PageActionWantsToRun(web_contents, extension_action_));
++
++  return image_source;
++}
++
++// static
++static void JNI_AppMenu_CallExtension(JNIEnv* env, const base::android::JavaParamRef<jobject>&
++    jprofile,
++    const base::android::JavaParamRef<jobject>& jweb_contents,
++    const base::android::JavaParamRef<jstring>& j_extension_id) {
++  std::string extension_to_call = ConvertJavaStringToUTF8(env, j_extension_id);
++  LOG(INFO) << "[EXTENSIONS] Calling AppMenu::CallExtension: " << extension_to_call;
++  Profile* profile = ProfileAndroid::FromProfileAndroid(jprofile);
++  LOG(INFO) << "[EXTENSIONS] Captured profile: " << profile;
++
++  // The object that will be used to get the browser action icon for us.
++  // It may load the icon asynchronously (in which case the initial icon
++  // returned by the factory will be transparent), so we have to observe it for
++  // updates to the icon.
++  // The associated ExtensionRegistry; cached for quick checking.
++  extensions::ExtensionRegistry* registry;
++
++  registry = extensions::ExtensionRegistry::Get(profile);
++
++  ExtensionAction* extension_action_;
++  extensions::ExtensionActionManager* manager =
++      extensions::ExtensionActionManager::Get(profile);
++  const extensions::ExtensionSet& enabled_extensions = registry->enabled_extensions();
++  const extensions::Extension* extension_ptr = enabled_extensions.GetByID(extension_to_call);
++  if (extension_ptr) {
++    extension_action_ = manager->GetExtensionAction(*extension_ptr);
++    if (!extension_action_) {
++      extension_action_ = manager->GetExtensionAction(*extension_ptr);
++    }
++    if (extension_action_) {
++       LOG(INFO) << "[EXTENSIONS] Dispatching extension_action_ for " << extension_to_call;
++       extensions::ExtensionActionAPI* action_api = extensions::ExtensionActionAPI::Get(profile);
++       content::WebContents* web_contents = content::WebContents::FromJavaWebContents(jweb_contents);
++       if (web_contents != nullptr) {
++         LOG(INFO) << "[EXTENSIONS] Granting tab access to: " << extension_to_call;
++         extensions::TabHelper::FromWebContents(web_contents)
++             ->active_tab_permission_granter()
++             ->GrantIfRequested(extension_ptr);
++       }
++       action_api->DispatchExtensionActionClicked(*extension_action_, web_contents, extension_ptr);
++       LOG(INFO) << "[EXTENSIONS] Dispatched JS extension_action_ for " << extension_to_call;
++    }
++  }
++}
++
++// static
++static void JNI_AppMenu_GrantExtensionActiveTab(JNIEnv* env, const
++    base::android::JavaParamRef<jobject>& jprofile,
++    const base::android::JavaParamRef<jobject>& jweb_contents,
++    const base::android::JavaParamRef<jstring>& j_extension_id) {
++  std::string extension_to_call = ConvertJavaStringToUTF8(env, j_extension_id);
++  LOG(INFO) << "[EXTENSIONS] Calling AppMenu::GrantExtensionActiveTab: " << extension_to_call;
++  Profile* profile = ProfileAndroid::FromProfileAndroid(jprofile);
++
++  extensions::ExtensionRegistry* registry;
++
++  registry = extensions::ExtensionRegistry::Get(profile);
++
++  ExtensionAction* extension_action_;
++  extensions::ExtensionActionManager* manager =
++      extensions::ExtensionActionManager::Get(profile);
++  const extensions::ExtensionSet& enabled_extensions = registry->enabled_extensions();
++  const extensions::Extension* extension_ptr = enabled_extensions.GetByID(extension_to_call);
++  if (extension_ptr) {
++    extension_action_ = manager->GetExtensionAction(*extension_ptr);
++    if (!extension_action_) {
++      extension_action_ = manager->GetExtensionAction(*extension_ptr);
++    }
++    if (extension_action_) {
++       content::WebContents* web_contents = content::WebContents::FromJavaWebContents(jweb_contents);
++       if (web_contents != nullptr) {
++         LOG(INFO) << "[EXTENSIONS] Granting tab access to: " << extension_to_call;
++         extensions::TabHelper::FromWebContents(web_contents)
++             ->active_tab_permission_granter()
++             ->GrantIfRequested(extension_ptr);
++       }
++    }
++  }
++}
++
++static base::android::ScopedJavaLocalRef<jstring> JNI_AppMenu_GetRunningExtensions(JNIEnv* env,
++    const base::android::JavaParamRef<jobject>& jprofile,
++    const base::android::JavaParamRef<jobject>& jweb_contents) {
++  LOG(INFO) << "[EXTENSIONS] Calling AppMenu::GetRunningExtensions";
++  Profile* profile = ProfileAndroid::FromProfileAndroid(jprofile);
++  LOG(INFO) << "[EXTENSIONS] Captured profile: " << profile;
++
++  // The object that will be used to get the browser action icon for us.
++  // It may load the icon asynchronously (in which case the initial icon
++  // returned by the factory will be transparent), so we have to observe it for
++  // updates to the icon.
++  // The associated ExtensionRegistry; cached for quick checking.
++  extensions::ExtensionRegistry* registry;
++
++  registry = extensions::ExtensionRegistry::Get(profile);
++
++  std::string result = "";
++
++  LOG(INFO) << "[EXTENSIONS] Getting enabled extensions";
++  const extensions::ExtensionSet& enabled_extensions = registry->enabled_extensions();
++
++  for (const auto& extension : enabled_extensions) {
++      LOG(INFO) << "[EXTENSIONS] Found extension: " << extension->id();
++      LOG(INFO) << "[EXTENSIONS] Found extension with name: " << extension->name();
++      LOG(INFO) << "[EXTENSIONS] Found extension with short name: " << extension->short_name();
++//      if (ExtensionActionAPI::GetExtensionActionVisibility(extension->id())) {
++      if (true) {
++        LOG(INFO) << "[EXTENSIONS] Found extension: " << extension->id() << " IS VISIBLE";
++        ExtensionAction* extension_action_;
++        extensions::ExtensionActionManager* manager =
++            extensions::ExtensionActionManager::Get(profile);
++        const extensions::Extension* extension_ptr = enabled_extensions.GetByID(extension->id());
++        if (extension_ptr) {
++          extension_action_ = manager->GetExtensionAction(*extension_ptr);
++          if (!extension_action_) {
++            extension_action_ = manager->GetExtensionAction(*extension_ptr);
++          }
++          if (extension_action_) {
++             LOG(INFO) << "[EXTENSIONS] Got extension_action_ for " << extension->id();
++             content::WebContents* web_contents = content::WebContents::FromJavaWebContents(jweb_contents);
++             LOG(INFO) << "[EXTENSIONS] Got access to web_contents: " << web_contents;
++             std::unique_ptr<IconWithBadgeImageSource> icon_badge = GetIconImageSource(extension_ptr, extension_action_, web_contents, gfx::Size(48, 48));
++             gfx::Canvas canvas(gfx::Size(48, 48), 1.0f, false);
++             icon_badge->Draw(&canvas);
++             LOG(INFO) << "[EXTENSIONS] Canvas drawn";
++             SkBitmap bitmap = canvas.GetBitmap();
++             std::string base64_image = webui::GetBitmapDataUrl(bitmap);
++             LOG(INFO) << "[EXTENSIONS] Canvas converted to bitmap: " << base64_image << " on " << extension->short_name();
++             if (extension_action_->HasPopup(SessionTabHelper::IdForTab(web_contents).id())) {
++               GURL popup_url = extension_action_->GetPopupUrl(
++                   SessionTabHelper::IdForTab(web_contents).id());
++               result += extension->name() + "\x1E" + extension->id() + "\x1E" + popup_url.spec() + "\x1E" + base64_image + "\x1F";
++             } else {
++               // Record separator and Unit separator in ASCII table
++               result += extension->name() + "\x1E" + extension->id() + "\x1E" + "" + "\x1E" + base64_image + "\x1F";
++             }
++          }
++        }
++      } else {
++        LOG(INFO) << "[EXTENSIONS] (ignoring) extension: " << extension->id() << " IS NOT VISIBLE";
++      }
++  }
++  LOG(INFO) << "[EXTENSIONS] Result is: " << result;
++  return ConvertUTF8ToJavaString(env, result);
++}
 diff --git a/chrome/browser/apps/platform_apps/BUILD.gn b/chrome/browser/apps/platform_apps/BUILD.gn
 index 37975f0e9c3e..5cdc8a4ca2b5 100644
 --- a/chrome/browser/apps/platform_apps/BUILD.gn
@@ -3106,6 +4413,822 @@ index ff2386afdd55..22aa2440b193 100644
  }
  
  }  // namespace extensions
+diff --git a/chrome/browser/extensions/api/tabs/tabs_api.cc b/chrome/browser/extensions/api/tabs/tabs_api.cc
+index e520e8ac9778..64326d41e534 100644
+--- a/chrome/browser/extensions/api/tabs/tabs_api.cc
++++ b/chrome/browser/extensions/api/tabs/tabs_api.cc
+@@ -97,6 +97,10 @@
+ #include "ui/base/models/list_selection_model.h"
+ #include "ui/base/ui_base_types.h"
+ 
++#include "chrome/browser/ui/android/tab_model/tab_model.h"
++#include "chrome/browser/ui/android/tab_model/tab_model_list.h"
++#include "content/public/browser/web_contents.h"
++
+ using content::BrowserThread;
+ using content::NavigationController;
+ using content::NavigationEntry;
+@@ -312,6 +316,7 @@ ExtensionFunction::ResponseAction WindowsGetFunction::Run() {
+       windows::Get::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
+ 
++  LOG(INFO) << "[EXTENSIONS] WindowsGetFunction - Step 1";
+   ApiParameterExtractor<windows::Get::Params> extractor(params.get());
+   Browser* browser = nullptr;
+   std::string error;
+@@ -319,14 +324,24 @@ ExtensionFunction::ResponseAction WindowsGetFunction::Run() {
+                                             extractor.type_filters(), &browser,
+                                             &error)) {
+     return RespondNow(Error(error));
++    LOG(INFO) << "[EXTENSIONS] WindowsGetFunction - Step 1a";
++    if (!browser) {
++      Profile* profile = Profile::FromBrowserContext(browser_context());
++      browser = new Browser(Browser::CreateParams(profile, true));
++    }
+   }
+ 
++  LOG(INFO) << "[EXTENSIONS] WindowsGetFunction - Step 2";
++  
++
+   ExtensionTabUtil::PopulateTabBehavior populate_tab_behavior =
+       extractor.populate_tabs() ? ExtensionTabUtil::kPopulateTabs
+                                 : ExtensionTabUtil::kDontPopulateTabs;
+   std::unique_ptr<base::DictionaryValue> windows =
+       ExtensionTabUtil::CreateWindowValueForExtension(
+           *browser, extension(), populate_tab_behavior, source_context_type());
++
++  LOG(INFO) << "[EXTENSIONS] WindowsGetFunction - Step 3";
+   return RespondNow(OneArgument(std::move(windows)));
+ }
+ 
+@@ -335,18 +350,26 @@ ExtensionFunction::ResponseAction WindowsGetCurrentFunction::Run() {
+       windows::GetCurrent::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
+ 
++  LOG(INFO) << "[EXTENSIONS] WindowsGetCurrentFunction - Step 1";
+   ApiParameterExtractor<windows::GetCurrent::Params> extractor(params.get());
+   Browser* browser = nullptr;
+   std::string error;
+   if (!windows_util::GetBrowserFromWindowID(
+           this, extension_misc::kCurrentWindowId, extractor.type_filters(),
+           &browser, &error)) {
+-    return RespondNow(Error(error));
++    LOG(INFO) << "[EXTENSIONS] WindowsGetCurrentFunction - Step 1a - Window not found";
++    if (!browser) {
++      Profile* profile = Profile::FromBrowserContext(browser_context());
++      browser = new Browser(Browser::CreateParams(profile, true));
++    }
+   }
+ 
++  LOG(INFO) << "[EXTENSIONS] WindowsGetCurrentFunction - Step 2";
++
+   ExtensionTabUtil::PopulateTabBehavior populate_tab_behavior =
+       extractor.populate_tabs() ? ExtensionTabUtil::kPopulateTabs
+                                 : ExtensionTabUtil::kDontPopulateTabs;
++  LOG(INFO) << "[EXTENSIONS] WindowsGetCurrentFunction - Step 3";
+   std::unique_ptr<base::DictionaryValue> windows =
+       ExtensionTabUtil::CreateWindowValueForExtension(
+           *browser, extension(), populate_tab_behavior, source_context_type());
+@@ -375,6 +398,11 @@ ExtensionFunction::ResponseAction WindowsGetLastFocusedFunction::Run() {
+         break;  // Use focused window.
+     }
+   }
++  if (!browser) {
++    Profile* profile = Profile::FromBrowserContext(browser_context());
++    browser = new Browser(Browser::CreateParams(profile, true));
++  }
++
+   if (!browser)
+     return RespondNow(Error(tabs_constants::kNoLastFocusedWindowError));
+ 
+@@ -392,11 +420,27 @@ ExtensionFunction::ResponseAction WindowsGetAllFunction::Run() {
+       windows::GetAll::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
+ 
++  LOG(INFO) << "[EXTENSIONS] Called chrome.windows.getAll() - Step 1";
++
+   ApiParameterExtractor<windows::GetAll::Params> extractor(params.get());
++  Browser* browser = nullptr;
++  std::string error;
++  if (!windows_util::GetBrowserFromWindowID(
++          this, extension_misc::kCurrentWindowId, extractor.type_filters(),
++          &browser, &error)) {
++    LOG(INFO) << "[EXTENSIONS] WindowsGetCurrentFunction - Step 1a - Window not found";
++    if (!browser) {
++      Profile* profile = Profile::FromBrowserContext(browser_context());
++     browser = new Browser(Browser::CreateParams(profile, true));
++    }
++  }
++
++  LOG(INFO) << "[EXTENSIONS] Called chrome.windows.getAll() - Step 2";
+   std::unique_ptr<base::ListValue> window_list(new base::ListValue());
+   ExtensionTabUtil::PopulateTabBehavior populate_tab_behavior =
+       extractor.populate_tabs() ? ExtensionTabUtil::kPopulateTabs
+                                 : ExtensionTabUtil::kDontPopulateTabs;
++#if 0
+   for (auto* controller : WindowControllerList::GetInstance()->windows()) {
+     if (!controller->GetBrowser() ||
+         !windows_util::CanOperateOnWindow(this, controller,
+@@ -407,6 +451,12 @@ ExtensionFunction::ResponseAction WindowsGetAllFunction::Run() {
+         *controller->GetBrowser(), extension(), populate_tab_behavior,
+         source_context_type()));
+   }
++#else
++  LOG(INFO) << "[EXTENSIONS] Called chrome.windows.getAll() - Step 3";
++  window_list->Append(ExtensionTabUtil::CreateWindowValueForExtension(
++      *browser, extension(), populate_tab_behavior, source_context_type()));
++  LOG(INFO) << "[EXTENSIONS] Called chrome.windows.getAll() - Step 4";
++#endif
+ 
+   return RespondNow(OneArgument(std::move(window_list)));
+ }
+@@ -510,13 +560,14 @@ ExtensionFunction::ResponseAction WindowsCreateFunction::Run() {
+                     &source_tab_strip, nullptr, &tab_index, &error)) {
+       return RespondNow(Error(error));
+     }
+-
++#if 0
+     if (!source_browser->window()->IsTabStripEditable())
+       return RespondNow(Error(tabs_constants::kTabStripNotEditableError));
+ 
+     if (source_browser->profile() != window_profile)
+       return RespondNow(
+           Error(tabs_constants::kCanOnlyMoveTabsWithinSameProfileError));
++#endif
+   }
+ 
+   if (!IsValidStateForWindowsCreateFunction(create_data))
+@@ -674,6 +725,7 @@ ExtensionFunction::ResponseAction WindowsUpdateFunction::Run() {
+       windows::Update::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
++#if 0
+   Browser* browser = nullptr;
+   std::string error;
+   if (!windows_util::GetBrowserFromWindowID(
+@@ -795,6 +847,9 @@ ExtensionFunction::ResponseAction WindowsUpdateFunction::Run() {
+   return RespondNow(OneArgument(ExtensionTabUtil::CreateWindowValueForExtension(
+       *browser, extension(), ExtensionTabUtil::kDontPopulateTabs,
+       source_context_type())));
++#else
++  return RespondNow(Error(kUnknownErrorDoNotUse));
++#endif
+ }
+ 
+ ExtensionFunction::ResponseAction WindowsRemoveFunction::Run() {
+@@ -802,6 +857,7 @@ ExtensionFunction::ResponseAction WindowsRemoveFunction::Run() {
+       windows::Remove::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
++#if 0
+   Browser* browser = nullptr;
+   std::string error;
+   if (!windows_util::GetBrowserFromWindowID(this, params->window_id,
+@@ -825,17 +881,23 @@ ExtensionFunction::ResponseAction WindowsRemoveFunction::Run() {
+   }
+   controller->window()->Close();
+   return RespondNow(NoArguments());
++#else
++  return RespondNow(Error(kUnknownErrorDoNotUse));
++#endif
+ }
+ 
+ // Tabs ------------------------------------------------------------------------
+ 
+ ExtensionFunction::ResponseAction TabsGetSelectedFunction::Run() {
++#if 0
+   // windowId defaults to "current" window.
+   int window_id = extension_misc::kCurrentWindowId;
++#endif
+ 
+   std::unique_ptr<tabs::GetSelected::Params> params(
+       tabs::GetSelected::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
++#if 0
+   if (params->window_id.get())
+     window_id = *params->window_id;
+ 
+@@ -851,12 +913,63 @@ ExtensionFunction::ResponseAction TabsGetSelectedFunction::Run() {
+   return RespondNow(ArgumentList(tabs::Get::Results::Create(
+       *CreateTabObjectHelper(contents, extension(), source_context_type(),
+                              tab_strip, tab_strip->active_index()))));
++#else
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 1";
++
++  std::unique_ptr<base::ListValue> result(new base::ListValue());
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 4";
++//  Profile* profile = Profile::FromBrowserContext(browser_context());
++//  Browser* last_active_browser =
++//      chrome::FindAnyBrowser(profile, include_incognito());
++//  Browser* current_browser =
++//      ChromeExtensionFunctionDetails(this).GetCurrentBrowser();
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5: " << profile;
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5-1: " << last_active_browser;
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5-2: " << current_browser;
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - IsOffTheRecordSessionActive: " << TabModelList::IsOffTheRecordSessionActive();
++  TabModel *tab_strip = nullptr;
++  if (!TabModelList::empty())
++    tab_strip = *(TabModelList::begin());
++//  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - TabModel: " << tab_strip;
++  if (tab_strip) {
++  //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - TabModel - Open tabs: " << tab_strip->GetTabCount();
++  //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - TabModel - Active index: " << tab_strip->GetActiveIndex();
++  //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - TabModel - Last user-interacted active index: " << tab_strip->GetLastNonExtensionActiveIndex();
++    for (int i = 0; i < tab_strip->GetTabCount(); ++i) {
++      WebContents* web_contents = tab_strip->GetWebContentsAt(i);
++    //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5d-1 (tab loop)";
++
++      int openingTab = (tab_strip->GetLastNonExtensionActiveIndex());
++      if (openingTab == -1)
++        openingTab = 0;
++
++      if (i != openingTab)
++        continue;
++
++      if (!web_contents) {
++      //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5d-1b (there is no webcontents)";
++        continue;
++      }
++
++    //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5d-2";
++
++    //  LOG(INFO) << "[EXTENSIONS] TabsGetSelectedFunction::Run - Step 5d-5";
++
++      return RespondNow(ArgumentList(
++          tabs::Get::Results::Create(*CreateTabObjectHelper(
++              web_contents, extension(), source_context_type(), nullptr, i))));
++
++    }
++  }
++  return RespondNow(Error(tabs_constants::kNoSelectedTabError));
++#endif
+ }
+ 
+ ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
+   std::unique_ptr<tabs::GetAllInWindow::Params> params(
+       tabs::GetAllInWindow::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
++#if 0
+   // windowId defaults to "current" window.
+   int window_id = extension_misc::kCurrentWindowId;
+   if (params->window_id.get())
+@@ -869,6 +982,49 @@ ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
+ 
+   return RespondNow(OneArgument(ExtensionTabUtil::CreateTabList(
+       browser, extension(), source_context_type())));
++#else
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 1";
++
++  std::unique_ptr<base::ListValue> result(new base::ListValue());
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 2";
++  Profile* profile = Profile::FromBrowserContext(browser_context());
++  Browser* last_active_browser =
++      chrome::FindAnyBrowser(profile, include_incognito_information());
++  Browser* current_browser =
++      ChromeExtensionFunctionDetails(this).GetCurrentBrowser();
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 3: " << profile;
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 3-1: " << last_active_browser;
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 3-2: " << current_browser;
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - IsOffTheRecordSessionActive: " << TabModelList::IsOffTheRecordSessionActive();
++  TabModel *tab_strip = nullptr;
++  if (!TabModelList::empty())
++    tab_strip = *(TabModelList::begin());
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - TabModel: " << tab_strip;
++  if (tab_strip) {
++    LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - TabModel - Open tabs: " << tab_strip->GetTabCount();
++    LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - TabModel - Active index: " << tab_strip->GetActiveIndex();
++    LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - TabModel - Last user-interacted active index: " << tab_strip->GetLastNonExtensionActiveIndex();
++    for (int i = 0; i < tab_strip->GetTabCount(); ++i) {
++      WebContents* web_contents = tab_strip->GetWebContentsAt(i);
++      LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 4d-1 (tab loop)";
++
++      if (!web_contents) {
++        LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 4d-1b (there is no webcontents)";
++        continue;
++      }
++
++      LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 4d-2";
++
++      result->Append(CreateTabObjectHelper(
++                         web_contents, extension(), source_context_type(),
++                         nullptr, i)
++                         ->ToValue());
++    }
++  }
++  LOG(INFO) << "[EXTENSIONS] TabsGetAllInWindowFunction::Run - Step 6";
++
++  return RespondNow(OneArgument(std::move(result)));
++#endif
+ }
+ 
+ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+@@ -876,10 +1032,13 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+       tabs::Query::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
+ 
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 1";
++
+   bool loading_status_set = params->query_info.status != tabs::TAB_STATUS_NONE;
+   bool loading = params->query_info.status == tabs::TAB_STATUS_LOADING;
+ 
+   URLPatternSet url_patterns;
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 2";
+   if (params->query_info.url.get()) {
+     std::vector<std::string> url_pattern_strings;
+     if (params->query_info.url->as_string)
+@@ -896,6 +1055,8 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+     }
+   }
+ 
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 3";
++
+   std::string title;
+   if (params->query_info.title.get())
+     title = *params->query_info.title;
+@@ -913,6 +1074,7 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+     window_type = tabs::ToString(params->query_info.window_type);
+ 
+   std::unique_ptr<base::ListValue> result(new base::ListValue());
++#if 0
+   Profile* profile = Profile::FromBrowserContext(browser_context());
+   Browser* last_active_browser =
+       chrome::FindAnyBrowser(profile, include_incognito_information());
+@@ -1008,7 +1170,51 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+                        web_contents->IsAudioMuted())) {
+         continue;
+       }
++#else
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 4";
++//  Profile* profile = Profile::FromBrowserContext(browser_context());
++//  Browser* last_active_browser =
++//      chrome::FindAnyBrowser(profile, include_incognito());
++//  Browser* current_browser =
++//      ChromeExtensionFunctionDetails(this).GetCurrentBrowser();
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5: " << profile;
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5-1: " << last_active_browser;
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5-2: " << current_browser;
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - IsOffTheRecordSessionActive: " << TabModelList::IsOffTheRecordSessionActive();
++  TabModel *tab_strip = nullptr;
++  if (!TabModelList::empty())
++    tab_strip = *(TabModelList::begin());
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - TabModel: " << tab_strip;
++  if (tab_strip) {
++//    LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - TabModel - Open tabs: " << tab_strip->GetTabCount();
++//    LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - TabModel - Active index: " << tab_strip->GetActiveIndex();
++//    LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - TabModel - Last user-interacted active index: " << tab_strip->GetLastNonExtensionActiveIndex();
++    for (int i = 0; i < tab_strip->GetTabCount(); ++i) {
++       WebContents* web_contents = tab_strip->GetWebContentsAt(i);
++//      LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5d-1 (tab loop)";
++
++      if (index > -1 && i != index) {
++//        LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5d-1a (oob-index): " << i << " vs " << index;
++         continue;
++       }
++
++      int openingTab = (tab_strip->GetLastNonExtensionActiveIndex());
++      if (openingTab == -1)
++        openingTab = 0;
++
++       if (!MatchesBool(params->query_info.active.get(),
++       
++                       i == openingTab)) {
++         continue;
++       }
+ 
++      if (!web_contents) {
++//        LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5d-1b (there is no webcontents)";
++         continue;
++       }
++
++//      LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5d-2";
++#endif
+       if (!title.empty() || !url_patterns.is_empty()) {
+         // "title" and "url" properties are considered privileged data and can
+         // only be checked if the extension has the "tabs" permission or it has
+@@ -1034,14 +1240,23 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
+         }
+       }
+ 
++//      LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5d-4";
++
+       if (loading_status_set && loading != web_contents->IsLoading())
+         continue;
+-
++//      LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 5d-5";
++#if 0
+       result->Append(CreateTabObjectHelper(web_contents, extension(),
+                                            source_context_type(), tab_strip, i)
+                          ->ToValue());
++#else
++      result->Append(CreateTabObjectHelper(web_contents, extension(),
++                                           source_context_type(), nullptr, i)
++                         ->ToValue());
++#endif
+     }
+   }
++//  LOG(INFO) << "[EXTENSIONS] TabsQueryFunction::Run - Step 6";
+ 
+   return RespondNow(OneArgument(std::move(result)));
+ }
+@@ -1051,6 +1266,8 @@ ExtensionFunction::ResponseAction TabsCreateFunction::Run() {
+       tabs::Create::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
+ 
++  LOG(INFO) << "[EXTENSIONS] Called chrome.tabs.create()";
++
+   ExtensionTabUtil::OpenTabParams options;
+   AssignOptionalValue(params->create_properties.window_id, &options.window_id);
+   AssignOptionalValue(params->create_properties.opener_tab_id,
+@@ -1130,14 +1347,23 @@ ExtensionFunction::ResponseAction TabsGetFunction::Run() {
+ ExtensionFunction::ResponseAction TabsGetCurrentFunction::Run() {
+   DCHECK(dispatcher());
+ 
++  LOG(INFO) << "[EXTENSIONS] TabsGetCurrentFunction - Step 1";
++
+   // Return the caller, if it's a tab. If not the result isn't an error but an
+   // empty tab (hence returning true).
+   WebContents* caller_contents = GetSenderWebContents();
+   std::unique_ptr<base::ListValue> results;
++  LOG(INFO) << "[EXTENSIONS] TabsGetCurrentFunction - Step 2";
+   if (caller_contents && ExtensionTabUtil::GetTabId(caller_contents) >= 0) {
++    LOG(INFO) << "[EXTENSIONS] TabsGetCurrentFunction - Step 3";
+     results = tabs::Get::Results::Create(*CreateTabObjectHelper(
+         caller_contents, extension(), source_context_type(), nullptr, -1));
+   }
++
++  if (results)
++    LOG(INFO) << "[EXTENSIONS] TabsGetCurrentFunction - Step 4 has results";
++  else
++    LOG(INFO) << "[EXTENSIONS] TabsGetCurrentFunction - Step 4 has no results";
+   return RespondNow(results ? ArgumentList(std::move(results)) : NoArguments());
+ }
+ 
+@@ -1218,11 +1444,29 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+ 
+   int tab_id = -1;
+   WebContents* contents = NULL;
++  TabModel *tab_strip = nullptr;
+   if (!params->tab_id.get()) {
++#if 0
+     Browser* browser = ChromeExtensionFunctionDetails(this).GetCurrentBrowser();
+     if (!browser)
+       return RespondNow(Error(tabs_constants::kNoCurrentWindowError));
+     contents = browser->tab_strip_model()->GetActiveWebContents();
++#else
++    if (!TabModelList::empty())
++      tab_strip = *(TabModelList::begin());
++    if (tab_strip) {
++       for (int i = 0; i < tab_strip->GetTabCount(); ++i) {
++          int openingTab = (tab_strip->GetLastNonExtensionActiveIndex());
++          if (openingTab == -1)
++            openingTab = 0;
++
++          if (i != openingTab)
++            continue;
++
++          contents = tab_strip->GetWebContentsAt(i);
++       }
++    }
++#endif
+     if (!contents)
+       return RespondNow(Error(tabs_constants::kNoSelectedTabError));
+     tab_id = SessionTabHelper::IdForTab(contents).id();
+@@ -1231,9 +1475,12 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+   }
+ 
+   int tab_index = -1;
++#if 0
+   TabStripModel* tab_strip = NULL;
++#endif
+   Browser* browser = nullptr;
+   std::string error;
++#if 0
+   if (!GetTabById(tab_id, browser_context(), include_incognito_information(),
+                   &browser, &tab_strip, &contents, &tab_index, &error)) {
+     return RespondNow(Error(error));
+@@ -1241,7 +1488,12 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+ 
+   if (!ExtensionTabUtil::BrowserSupportsTabs(browser))
+     return RespondNow(Error(tabs_constants::kNoCurrentWindowError));
+-
++#else
++  if (!GetTabById(tab_id, browser_context(), include_incognito_information(),
++                  &browser, nullptr, &contents, &tab_index, &error)) {
++    return RespondNow(Error(error));
++  }
++#endif
+   web_contents_ = contents;
+ 
+   // TODO(rafaelw): handle setting remaining tab properties:
+@@ -1251,11 +1503,13 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+   // Navigate the tab to a new location if the url is different.
+   if (params->update_properties.url.get()) {
+     std::string updated_url = *params->update_properties.url;
++#if 0
+     if (browser->profile()->IsIncognitoProfile() &&
+         !IsURLAllowedInIncognito(GURL(updated_url), browser->profile())) {
+       return RespondNow(Error(ErrorUtils::FormatErrorMessage(
+           tabs_constants::kURLsNotAllowedInIncognitoError, updated_url)));
+     }
++#endif
+     if (!UpdateURL(updated_url, tab_id, &error))
+       return RespondNow(Error(error));
+   }
+@@ -1270,6 +1524,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+   if (params->update_properties.active.get())
+     active = *params->update_properties.active;
+ 
++#if 0
+   if (active) {
+     if (tab_strip->active_index() != tab_index) {
+       tab_strip->ActivateTabAt(tab_index);
+@@ -1290,6 +1545,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+     // Update the tab index because it may move when being pinned.
+     tab_index = tab_strip->GetIndexOfWebContents(contents);
+   }
++#endif
+ 
+   if (params->update_properties.muted.get() &&
+       !chrome::SetTabAudioMuted(contents, *params->update_properties.muted,
+@@ -1299,6 +1555,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+         base::NumberToString(tab_id))));
+   }
+ 
++#if 0
+   if (params->update_properties.opener_tab_id.get()) {
+     int opener_id = *params->update_properties.opener_tab_id;
+     WebContents* opener_contents = NULL;
+@@ -1325,6 +1582,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+         web_contents_)
+         ->SetAutoDiscardable(state);
+   }
++#endif
+ 
+   return RespondNow(GetResult());
+ }
+@@ -1462,7 +1720,11 @@ bool TabsMoveFunction::MoveTab(int tab_id,
+   }
+ 
+   // Don't let the extension move the tab if the user is dragging tabs.
++#if 0
+   if (!source_browser->window()->IsTabStripEditable()) {
++#else
++  if (true) {
++#endif
+     *error = tabs_constants::kTabStripNotEditableError;
+     return false;
+   }
+@@ -1605,6 +1867,8 @@ ExtensionFunction::ResponseAction TabsRemoveFunction::Run() {
+       tabs::Remove::Params::Create(*args_));
+   EXTENSION_FUNCTION_VALIDATE(params.get());
+ 
++  LOG(INFO) << "[EXTENSIONS] Calling chrome.tabs.remove()";
++
+   std::string error;
+   if (params->tab_ids.as_integers) {
+     std::vector<int>& tab_ids = *params->tab_ids.as_integers;
+@@ -1629,10 +1893,13 @@ bool TabsRemoveFunction::RemoveTab(int tab_id, std::string* error) {
+   }
+ 
+   // Don't let the extension remove a tab if the user is dragging tabs around.
++#if 0
+   if (!browser->window()->IsTabStripEditable()) {
+     *error = tabs_constants::kTabStripNotEditableError;
+     return false;
+   }
++#endif
++
+   // There's a chance that the tab is being dragged, or we're in some other
+   // nested event loop. This code path ensures that the tab is safely closed
+   // under such circumstances, whereas |TabStripModel::CloseWebContentsAt()|
+@@ -1860,6 +2127,7 @@ ExecuteCodeInTabFunction::ExecuteCodeInTabFunction()
+ ExecuteCodeInTabFunction::~ExecuteCodeInTabFunction() {}
+ 
+ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 1";
+   if (init_result_)
+     return init_result_.value();
+ 
+@@ -1876,9 +2144,11 @@ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
+   if (!InjectDetails::Populate(*details_value, details.get()))
+     return set_init_result(VALIDATION_FAILURE);
+ 
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 2";
+   // If the tab ID wasn't given then it needs to be converted to the
+   // currently active tab's ID.
+   if (tab_id == -1) {
++#if 0
+     Browser* browser = chrome_details_.GetCurrentBrowser();
+     // Can happen during shutdown.
+     if (!browser)
+@@ -1888,10 +2158,48 @@ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
+     if (!ExtensionTabUtil::GetDefaultTab(browser, &web_contents, &tab_id))
+       return set_init_result_error(tabs_constants::kNoTabInBrowserWindowError);
+   }
++#else
++    LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 2a";
++    TabModel *tab_strip = nullptr;
++    if (!TabModelList::empty())
++      tab_strip = *(TabModelList::begin());
++    LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - TabModel: " << tab_strip;
++    if (tab_strip) {
++      LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - TabModel - Open tabs: " << tab_strip->GetTabCount();
++      LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - TabModel - Active index: " << tab_strip->GetActiveIndex();
++      LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - TabModel - Last user-interacted active index: " << tab_strip->GetLastNonExtensionActiveIndex();
++      for (int i = 0; i < tab_strip->GetTabCount(); ++i) {
++        WebContents* web_contents = tab_strip->GetWebContentsAt(i);
++        LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 2aa-1 (tab loop)";
++
++        int openingTab = (tab_strip->GetLastNonExtensionActiveIndex());
++        if (openingTab == -1)
++          openingTab = 0;
++
++        if (i != openingTab)
++          continue;
++
++        if (web_contents && ExtensionTabUtil::GetTabId(web_contents) >= 0) {
++          tab_id = ExtensionTabUtil::GetTabId(web_contents);
++          LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 2a (found) with id: " << tab_id;
++          break;
++        }
++      }
++    }
++  }
++  if (tab_id == -1) {
++    LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 2b";
++    return set_init_result_error(tabs_constants::kNoCurrentWindowError);
++  }
++
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 3";
++#endif
+ 
+   execute_tab_id_ = tab_id;
+   details_ = std::move(details);
+   set_host_id(HostID(HostID::EXTENSIONS, extension()->id()));
++
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::Init - Step 4";
+   return set_init_result(SUCCESS);
+ }
+ 
+@@ -1959,14 +2267,25 @@ ScriptExecutor* ExecuteCodeInTabFunction::GetScriptExecutor(
+   Browser* browser = nullptr;
+   content::WebContents* contents = nullptr;
+ 
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::GetScriptExecutor - Step 1";
++
++#if 0
+   bool success = GetTabById(execute_tab_id_, browser_context(),
+                             include_incognito_information(), &browser, nullptr,
+                             &contents, nullptr, error) &&
+                  contents && browser;
++#else
++  bool success = GetTabById(execute_tab_id_, browser_context(),
++                            include_incognito_information(), &browser, nullptr,
++                            &contents, nullptr, error) &&
++                 contents;
+ 
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::GetScriptExecutor - Step 2: " << contents << " - " << browser;
++#endif
+   if (!success)
+     return nullptr;
+-
++  
++  LOG(INFO) << "[EXTENSIONS] ExecuteCodeInTabFunction::GetScriptExecutor - Step 3";
+   return TabHelper::FromWebContents(contents)->script_executor();
+ }
+ 
+diff --git a/chrome/browser/extensions/api/tabs/tabs_event_router.cc b/chrome/browser/extensions/api/tabs/tabs_event_router.cc
+index bc7b34ca36bf..0031fb3ca578 100644
+--- a/chrome/browser/extensions/api/tabs/tabs_event_router.cc
++++ b/chrome/browser/extensions/api/tabs/tabs_event_router.cc
+@@ -317,6 +317,7 @@ void TabsEventRouter::DispatchTabInsertedAt(TabStripModel* tab_strip_model,
+                                             WebContents* contents,
+                                             int index,
+                                             bool active) {
++  LOG(INFO) << "[EXTENSIONS] TabsEventRouter::DispatchTabInsertedAt - Step 1";
+   if (!GetTabEntry(contents)) {
+     // We've never seen this tab, send create event as long as we're not in the
+     // constructor.
+@@ -344,6 +345,7 @@ void TabsEventRouter::DispatchTabInsertedAt(TabStripModel* tab_strip_model,
+   DispatchEvent(profile, events::TABS_ON_ATTACHED,
+                 api::tabs::OnAttached::kEventName, std::move(args),
+                 EventRouter::USER_GESTURE_UNKNOWN);
++  LOG(INFO) << "[EXTENSIONS] TabsEventRouter::TabInsertedAt - Step 2";
+ }
+ 
+ void TabsEventRouter::DispatchTabClosingAt(TabStripModel* tab_strip_model,
+@@ -359,7 +361,7 @@ void TabsEventRouter::DispatchTabClosingAt(TabStripModel* tab_strip_model,
+   object_args->SetInteger(tabs_constants::kWindowIdKey,
+                           ExtensionTabUtil::GetWindowIdOfTab(contents));
+   object_args->SetBoolean(tabs_constants::kWindowClosing,
+-                          tab_strip_model->closing_all());
++                          true);
+   args->Append(std::move(object_args));
+ 
+   Profile* profile = Profile::FromBrowserContext(contents->GetBrowserContext());
+@@ -370,6 +372,31 @@ void TabsEventRouter::DispatchTabClosingAt(TabStripModel* tab_strip_model,
+   UnregisterForTabNotifications(contents);
+ }
+ 
++void TabsEventRouter::DispatchTabClosedAt(TabStripModel* tab_strip_model,
++                                   WebContents* contents,
++                                   int index, Profile *profile) {
++  int tab_id = ExtensionTabUtil::GetTabId(contents);
++
++  std::unique_ptr<base::ListValue> args(new base::ListValue);
++  args->AppendInteger(tab_id);
++
++  std::unique_ptr<base::DictionaryValue> object_args(
++      new base::DictionaryValue());
++  object_args->SetInteger(tabs_constants::kWindowIdKey,
++                          ExtensionTabUtil::GetWindowIdOfTab(contents));
++  object_args->SetBoolean(tabs_constants::kWindowClosing,
++                          true);
++  args->Append(std::move(object_args));
++
++  if (!profile)
++    profile = Profile::FromBrowserContext(contents->GetBrowserContext());
++  DispatchEvent(profile, events::TABS_ON_REMOVED, api::tabs::OnRemoved::kEventName,
++                std::move(args), EventRouter::USER_GESTURE_UNKNOWN);
++
++  UnregisterForTabNotifications(contents);
++}
++
++
+ void TabsEventRouter::DispatchTabDetachedAt(WebContents* contents,
+                                             int index,
+                                             bool was_active) {
+@@ -517,8 +544,9 @@ void TabsEventRouter::DispatchTabReplacedAt(WebContents* old_contents,
+ 
+ void TabsEventRouter::TabCreatedAt(WebContents* contents,
+                                    int index,
+-                                   bool active) {
+-  Profile* profile = Profile::FromBrowserContext(contents->GetBrowserContext());
++                                   bool active, Profile *profile) {
++  if (!profile)
++    profile = Profile::FromBrowserContext(contents->GetBrowserContext());
+   std::unique_ptr<base::ListValue> args(new base::ListValue);
+   auto event = std::make_unique<Event>(events::TABS_ON_CREATED,
+                                        api::tabs::OnCreated::kEventName,
+@@ -552,12 +580,14 @@ void TabsEventRouter::TabUpdated(TabEntry* entry,
+ }
+ 
+ void TabsEventRouter::FaviconUrlUpdated(WebContents* contents) {
++#if 0
+   content::NavigationEntry* entry = contents->GetController().GetVisibleEntry();
+   if (!entry || !entry->GetFavicon().valid)
+     return;
+   std::set<std::string> changed_property_names;
+   changed_property_names.insert(tabs_constants::kFaviconUrlKey);
+   DispatchTabUpdatedEvent(contents, std::move(changed_property_names));
++#endif
+ }
+ 
+ void TabsEventRouter::DispatchEvent(
+@@ -608,6 +638,8 @@ void TabsEventRouter::DispatchTabUpdatedEvent(
+ }
+ 
+ void TabsEventRouter::RegisterForTabNotifications(WebContents* contents) {
++  if (true)
++    return;
+   favicon_scoped_observer_.Add(
+       favicon::ContentFaviconDriver::FromWebContents(contents));
+ 
+@@ -619,6 +651,8 @@ void TabsEventRouter::RegisterForTabNotifications(WebContents* contents) {
+ }
+ 
+ void TabsEventRouter::UnregisterForTabNotifications(WebContents* contents) {
++  if (true)
++    return;
+   favicon_scoped_observer_.Remove(
+       favicon::ContentFaviconDriver::FromWebContents(contents));
+ 
+diff --git a/chrome/browser/extensions/api/tabs/tabs_event_router.h b/chrome/browser/extensions/api/tabs/tabs_event_router.h
+index e7335a902ae8..c6ff11ae978f 100644
+--- a/chrome/browser/extensions/api/tabs/tabs_event_router.h
++++ b/chrome/browser/extensions/api/tabs/tabs_event_router.h
+@@ -81,7 +81,9 @@ class TabsEventRouter : public TabStripModelObserver,
+   void OnAutoDiscardableStateChange(content::WebContents* contents,
+                                     bool is_auto_discardable) override;
+ 
++#if 0
+  private:
++#endif
+   // Methods called from OnTabStripModelChanged.
+   void DispatchTabInsertedAt(TabStripModel* tab_strip_model,
+                              content::WebContents* contents,
+@@ -108,7 +110,10 @@ class TabsEventRouter : public TabStripModelObserver,
+ 
+   // "Synthetic" event. Called from DispatchTabInsertedAt if new tab is
+   // detected.
+-  void TabCreatedAt(content::WebContents* contents, int index, bool active);
++  void TabCreatedAt(content::WebContents* contents, int index, bool active, Profile* profile = nullptr);
++  void DispatchTabClosedAt(TabStripModel* tab_strip_model,
++                           content::WebContents* contents,
++                           int index, Profile* profile);
+ 
+   // Internal processing of tab updated events. Intended to be called when
+   // there's any changed property.
 diff --git a/chrome/browser/extensions/api/tabs/windows_event_router.cc b/chrome/browser/extensions/api/tabs/windows_event_router.cc
 index 5f41fa24c34b..7c3a75fe261c 100644
 --- a/chrome/browser/extensions/api/tabs/windows_event_router.cc
@@ -7870,6 +9993,426 @@ index 7932e2421de6..6b096a497bae 100644
        sources += [
          "webui/settings/printing_handler.cc",
          "webui/settings/printing_handler.h",
+diff --git a/chrome/browser/ui/android/appmenu/internal/BUILD.gn b/chrome/browser/ui/android/appmenu/internal/BUILD.gn
+index 04b1999e6526..cf6808edb0d8 100644
+--- a/chrome/browser/ui/android/appmenu/internal/BUILD.gn
++++ b/chrome/browser/ui/android/appmenu/internal/BUILD.gn
+@@ -19,6 +19,20 @@ android_library("java") {
+   deps = [
+     ":java_resources",
+     "//base:base_java",
++    "//base:jni_java",
++    ":jni_headers",
++    "//chrome/browser/ui/android/appmenu:java_resources",
++    "//chrome/browser/ui/android/strings:ui_strings_grd",
++    "//chrome/browser/ui/android/styles:java_resources",
++    "//chrome/browser/ui/android/widget:ui_widget_java_resources",
++    "//chrome/android:chrome_java",
++    "//content/public/android:content_java",
++    "//chrome/android:ui_locale_string_resources",
++    "//chrome/android/features/start_surface/internal:java",
++    "//chrome/android/public/profiles:java",
++    "//chrome/browser/ui/android/strings:ui_strings_grd",
++    "//chrome/browser/ui/android/styles:java",
++    "//chrome/browser/ui/android/widget:java",
+     "//chrome/browser/ui/android/appmenu:java",
+     "//chrome/browser/ui/android/appmenu:java_resources",
+     "//chrome/browser/ui/android/widget:java",
+@@ -27,6 +41,15 @@ android_library("java") {
+     "//third_party/android_deps:androidx_annotation_annotation_java",
+     "//ui/android:ui_java",
+   ]
++
++}
++
++generate_jni("jni_headers") {
++  sources = [
++    "java/src/org/chromium/chrome/browser/ui/appmenu/AppMenu.java",
++#    "java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuDragHelper.java"
++  ]
++
+ }
+ 
+ android_resources("java_resources") {
+diff --git a/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenu.java b/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenu.java
+index 9cd2173848f3..8fd0b65f3366 100644
+--- a/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenu.java
++++ b/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenu.java
+@@ -7,10 +7,17 @@ package org.chromium.chrome.browser.ui.appmenu;
+ import android.animation.Animator;
+ import android.animation.Animator.AnimatorListener;
+ import android.animation.AnimatorSet;
++import android.app.Activity;
+ import android.content.Context;
+ import android.content.res.Resources;
++import android.util.Log;
++import android.graphics.Bitmap;
++import android.graphics.drawable.BitmapDrawable;
++import android.graphics.BitmapFactory;
++import android.graphics.Color;
+ import android.graphics.Rect;
+ import android.graphics.drawable.Drawable;
++import android.graphics.ColorMatrixColorFilter;
+ import android.os.Build;
+ import android.text.TextUtils;
+ import android.view.Gravity;
+@@ -18,6 +25,7 @@ import android.view.KeyEvent;
+ import android.view.LayoutInflater;
+ import android.view.Menu;
+ import android.view.MenuItem;
++import android.view.MenuItem.OnMenuItemClickListener;
+ import android.view.Surface;
+ import android.view.View;
+ import android.view.View.MeasureSpec;
+@@ -26,24 +34,47 @@ import android.view.ViewGroup;
+ import android.view.ViewStub;
+ import android.view.WindowManager;
+ import android.widget.AdapterView;
++import android.widget.AdapterView.AdapterContextMenuInfo;
+ import android.widget.AdapterView.OnItemClickListener;
+ import android.widget.ImageButton;
+ import android.widget.ListView;
+ import android.widget.PopupWindow;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View.OnTouchListener;
++import android.util.Base64;
++import android.util.Base64InputStream;
++import android.support.v7.view.menu.MenuBuilder;
++import android.widget.AdapterView;
+ 
++import org.chromium.content_public.browser.LoadUrlParams;
++import org.chromium.ui.base.PageTransition;
++import org.chromium.chrome.browser.tabmodel.TabLaunchType;
++import org.chromium.chrome.browser.ChromeActivity;
++import org.chromium.ui.mojom.WindowOpenDisposition;
++import org.chromium.base.ContextUtils;
+ import androidx.annotation.IdRes;
+ import androidx.annotation.Nullable;
+ import androidx.annotation.VisibleForTesting;
++import org.chromium.chrome.browser.tabmodel.TabModelSelector;
+ 
+ import org.chromium.base.AnimationFrameTimeHistogram;
+ import org.chromium.base.ApiCompatibilityUtils;
+ import org.chromium.base.ContextUtils;
+ import org.chromium.base.SysUtils;
++import org.chromium.chrome.browser.tab.Tab;
+ import org.chromium.chrome.browser.ui.appmenu.internal.R;
+ import org.chromium.chrome.browser.ui.widget.highlight.ViewHighlighter;
+ import org.chromium.ui.widget.Toast;
++import org.chromium.chrome.browser.profiles.Profile;
++import org.chromium.content_public.browser.WebContents;
++
++import org.chromium.base.ThreadUtils;
++import org.chromium.base.annotations.CalledByNative;
+ 
+ import java.util.ArrayList;
++import java.util.Hashtable;
+ import java.util.List;
+ 
+ /**
+@@ -63,6 +94,9 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+     private final int mNegativeVerticalOffsetNotTopAnchored;
+     private final int[] mTempLocation;
+ 
++    private Hashtable<Integer, String> extensionsIds;
++    private Hashtable<Integer, String> extensionsPopups;
++    private Activity mActivity;
+     private PopupWindow mPopup;
+     private ListView mListView;
+     private AppMenuAdapter mAdapter;
+@@ -168,7 +202,7 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+      * @param showFromBottom        Whether the appearance animation should run from the bottom up.
+      * @param customViewBinders     See {@link AppMenuPropertiesDelegate#getCustomViewBinders()}.
+      */
+-    void show(Context context, final View anchorView, boolean isByPermanentButton,
++    void show(Activity activity, Context context, final View anchorView, boolean isByPermanentButton,
+             int screenRotation, Rect visibleDisplayFrame, int screenHeight,
+             @IdRes int footerResourceId, @IdRes int headerResourceId, Integer highlightedItemId,
+             boolean circleHighlightItem, boolean showFromBottom,
+@@ -229,12 +263,71 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+ 
+         // Extract visible items from the Menu.
+         int numItems = mMenu.size();
++        int numItemsBase = mMenu.size();
+         List<MenuItem> menuItems = new ArrayList<MenuItem>();
+-        for (int i = 0; i < numItems; ++i) {
+-            MenuItem item = mMenu.getItem(i);
+-            if (item.isVisible()) {
++        // Show all menuitems first, then extensions
++        if (!ContextUtils.getAppSharedPreferences().getBoolean("show_extensions_first", false)) {
++          for (int i = 0; i < numItems; ++i) {
++              MenuItem item = mMenu.getItem(i);
++              if (item.isVisible()) {
++                  menuItems.add(item);
++              }
++          }
++        } else { // Show one menuitem, then extensions, then all other menuitems
++          for (int i = 0; i < numItems && i < 1; ++i) {
++              MenuItem item = mMenu.getItem(i);
++              if (item.isVisible()) {
++                  menuItems.add(item);
++              }
++          }
++        }
++        WebContents webContents = null;
++        mActivity = activity;
++        boolean canShowExtensions = false;
++        if (activity instanceof ChromeActivity) {
++          Tab currentTab = ((ChromeActivity)activity).getActivityTab();
++          if (currentTab != null)
++            canShowExtensions = true;
++          webContents = currentTab != null ? currentTab.getWebContents() : null;
++        }
++
++        extensionsIds = new Hashtable<Integer, String>();
++        extensionsPopups = new Hashtable<Integer, String>();
++
++        if (canShowExtensions) {
++          int itemIndex = numItems++;
++          String extensions = nativeGetRunningExtensions(getProfile(), webContents);
++          if (!extensions.isEmpty()) {
++            String[] extensionsArray = extensions.split("\u001f");
++            for (String extension: extensionsArray) {
++                String[] extensionsInfo = extension.split("\u001e");
++                Menu fakeMenu = new MenuBuilder(activity);
++                MenuItem item = fakeMenu.add(999999, itemIndex, 0, extensionsInfo[0]);
++                if (extensionsInfo.length > 1) {
++                  extensionsIds.put(itemIndex, extensionsInfo[1]);
++                }
++                if (extensionsInfo.length > 2 && !extensionsInfo[2].equals("")) {
++                  extensionsPopups.put(itemIndex, extensionsInfo[2]);
++                }
++                if (extensionsInfo.length > 3) {
++                  String cleanImage = extensionsInfo[3].replace("data:image/png;base64,", "").replace("data:image/jpeg;base64,","").replace("data:image/gif;base64,", "");
++                  byte[] decodedString = Base64.decode(cleanImage, Base64.DEFAULT);
++                  Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
++                  item.setIcon(new BitmapDrawable(context.getResources(), decodedByte));
++                }
+                 menuItems.add(item);
++                itemIndex++;
+             }
++          }
++        }
++
++        if (ContextUtils.getAppSharedPreferences().getBoolean("show_extensions_first", false)) {
++          for (int i = 1; i < numItemsBase; ++i) {
++              MenuItem item = mMenu.getItem(i);
++              if (item.isVisible()) {
++                  menuItems.add(item);
++              }
++          }
+         }
+ 
+         Rect sizingPadding = new Rect(bgPadding);
+@@ -355,12 +448,47 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+ 
+         int xPos = anchorViewX + offsets[0];
+         int yPos = anchorViewY + offsets[1];
++        if (ContextUtils.getAppSharedPreferences().getBoolean("enable_bottom_toolbar", false)) {
++           yPos = appRect.height() - popupHeight;
++           if (yPos <= 0)
++               yPos = 0;
++        }
+         int[] position = {xPos, yPos};
+         return position;
+     }
+ 
+     @Override
+     public void onItemClick(MenuItem menuItem) {
++        Log.i("Kiwi", "[EXTENSIONS] Item was clicked in the main menu: " + menuItem.getGroupId());
++        if (menuItem.getGroupId() == 999999 && extensionsPopups.containsKey(menuItem.getItemId())) {
++          Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked (popup)");
++          if (mActivity != null && mActivity instanceof ChromeActivity) {
++            Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked - Activity is not empty, opening tab - Step 1: " + extensionsPopups.get(menuItem.getItemId()));
++            WebContents webContents = null;
++            Tab currentTab = ((ChromeActivity)mActivity).getActivityTab();
++            if (currentTab != null) {
++              webContents = currentTab != null ? currentTab.getWebContents() : null;
++              nativeGrantExtensionActiveTab(getProfile(), webContents, extensionsIds.get(menuItem.getItemId()));
++              TabModelSelector.from(currentTab).openNewTab(new LoadUrlParams(extensionsPopups.get(menuItem.getItemId()), PageTransition.LINK), TabLaunchType.FROM_CHROME_UI, currentTab, currentTab.isIncognito());
++            }
++            Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked - Activity is not empty, opening tab - Step 2: " + extensionsPopups.get(menuItem.getItemId()));
++          } else {
++            Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked but no activity");
++          }
++        }
++        else if (menuItem.getGroupId() == 999999 && extensionsIds.containsKey(menuItem.getItemId())) {
++          Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked");
++          if (mActivity != null && mActivity instanceof ChromeActivity) {
++            Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked - Activity is not empty, opening tab - Step 1: " + extensionsIds.get(menuItem.getItemId()));
++            WebContents webContents = null;
++            Tab currentTab = ((ChromeActivity)mActivity).getActivityTab();
++            webContents = currentTab != null ? currentTab.getWebContents() : null;
++            nativeCallExtension(getProfile(), webContents, extensionsIds.get(menuItem.getItemId()));
++            Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked - Activity is not empty, opening tab - Step 2: " + extensionsIds.get(menuItem.getItemId()));
++          } else {
++            Log.e("EXTENSIONS", "[EXTENSIONS] MenuItem clicked but no activity");
++          }
++        }
+         if (menuItem.isEnabled()) {
+             dismiss();
+             mHandler.onOptionsItemSelected(menuItem);
+@@ -503,6 +631,10 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+         ViewGroup list = mListView;
+         for (int i = 0; i < list.getChildCount(); i++) {
+             View view = list.getChildAt(i);
++            MenuItem item = mAdapter.getItem(i);
++            int viewCount = item.hasSubMenu() ? item.getSubMenu().size() : 1;
++            if (viewCount != 5)
++              continue;
+             Object animatorObject = view.getTag(R.id.menu_item_enter_anim_id);
+             if (animatorObject != null) {
+                 if (builder == null) {
+@@ -533,6 +665,8 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+ 
+         if (mHandler != null) mHandler.onFooterViewInflated(mFooterView);
+ 
++        if (mHandler != null) mHandler.onFooterInflated(mFooterView);
++
+         return mFooterView.getMeasuredHeight();
+     }
+ 
+@@ -556,4 +690,16 @@ class AppMenu implements OnItemClickListener, OnKeyListener, AppMenuAdapter.OnCl
+     void finishAnimationsForTests() {
+         if (mMenuItemEnterAnimator != null) mMenuItemEnterAnimator.end();
+     }
++
++    /**
++     * @returns The profile on which all UI-based browsing data operations should be performed,
++     *         which is the currently active regular profile.
++     */
++    private static Profile getProfile() {
++        return Profile.getLastUsedProfile().getOriginalProfile();
++    }
++
++    public static native String nativeGetRunningExtensions(Profile profile, WebContents webContents);
++    private static native void nativeCallExtension(Profile profile, WebContents webContents, String extensionId);
++    private static native void nativeGrantExtensionActiveTab(Profile profile, WebContents webContents, String extensionId);
+ }
+diff --git a/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuCoordinatorImpl.java b/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuCoordinatorImpl.java
+index 50d32ed993f4..bfb4f9b1b6a3 100644
+--- a/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuCoordinatorImpl.java
++++ b/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuCoordinatorImpl.java
+@@ -4,6 +4,7 @@
+ 
+ package org.chromium.chrome.browser.ui.appmenu;
+ 
++import android.app.Activity;
+ import android.content.Context;
+ import android.view.View;
+ import android.view.ViewConfiguration;
+@@ -65,7 +66,11 @@ class AppMenuCoordinatorImpl implements AppMenuCoordinator {
+         mAppMenuDelegate = appMenuDelegate;
+         mAppMenuPropertiesDelegate = mAppMenuDelegate.createAppMenuPropertiesDelegate();
+ 
+-        mAppMenuHandler = new AppMenuHandlerImpl(mAppMenuPropertiesDelegate, mAppMenuDelegate,
++        Activity activity = null;
++        if (mContext instanceof Activity) {
++            activity = (Activity) mContext;
++        }
++        mAppMenuHandler = new AppMenuHandlerImpl(activity, mAppMenuPropertiesDelegate, mAppMenuDelegate,
+                 mAppMenuPropertiesDelegate.getAppMenuLayoutId(), decorView,
+                 activityLifecycleDispatcher, hardwareButtonAnchorView);
+     }
+diff --git a/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuHandlerImpl.java b/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuHandlerImpl.java
+index 9bd681ed7084..dda1e1b9e62f 100644
+--- a/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuHandlerImpl.java
++++ b/chrome/browser/ui/android/appmenu/internal/java/src/org/chromium/chrome/browser/ui/appmenu/AppMenuHandlerImpl.java
+@@ -5,6 +5,7 @@
+ package org.chromium.chrome.browser.ui.appmenu;
+ 
+ import android.annotation.SuppressLint;
++import android.app.Activity;
+ import android.content.Context;
+ import android.content.res.Configuration;
+ import android.content.res.TypedArray;
+@@ -49,6 +50,7 @@ class AppMenuHandlerImpl
+     private final AppMenuDelegate mAppMenuDelegate;
+     private final View mDecorView;
+     private final ActivityLifecycleDispatcher mActivityLifecycleDispatcher;
++    private final Activity mActivity;
+ 
+     private Callback<MenuItem> mTestOptionsItemSelectedListener;
+ 
+@@ -77,10 +79,11 @@ class AppMenuHandlerImpl
+      * @param hardwareButtonAnchorView The {@link View} used as an anchor for the menu when it is
+      *            displayed using a hardware button.
+      */
+-    public AppMenuHandlerImpl(AppMenuPropertiesDelegate delegate, AppMenuDelegate appMenuDelegate,
++    public AppMenuHandlerImpl(Activity activity, AppMenuPropertiesDelegate delegate, AppMenuDelegate appMenuDelegate,
+             int menuResourceId, View decorView,
+             ActivityLifecycleDispatcher activityLifecycleDispatcher,
+             View hardwareButtonAnchorView) {
++        mActivity = activity;
+         mAppMenuDelegate = appMenuDelegate;
+         mDelegate = delegate;
+         mDecorView = decorView;
+@@ -212,7 +215,7 @@ class AppMenuHandlerImpl
+         if (mDelegate.shouldShowHeader(appRect.height())) {
+             headerResourceId = mDelegate.getHeaderResourceId();
+         }
+-        mAppMenu.show(wrapper, anchorView, isByPermanentButton, rotation, appRect, pt.y,
++        mAppMenu.show(mActivity, wrapper, anchorView, isByPermanentButton, rotation, appRect, pt.y,
+                 footerResourceId, headerResourceId, mHighlightMenuId, mCircleHighlight,
+                 showFromBottom, mDelegate.getCustomViewBinders());
+         mAppMenuDragHelper.onShow(startDragging);
+@@ -302,6 +305,14 @@ class AppMenuHandlerImpl
+         }
+     }
+ 
++    /**
++     * A notification that the footer view has been inflated.
++     * @param view The inflated view.
++     */
++    void onFooterInflated(View view) {
++        if (mDelegate != null) mDelegate.onFooterViewInflated(this, view);
++    }
++
+     /**
+      * A notification that the header view has been inflated.
+      * @param view The inflated view.
+diff --git a/chrome/browser/ui/android/tab_model/tab_model.h b/chrome/browser/ui/android/tab_model/tab_model.h
+index 3b1db32af03a..a3b57d235410 100644
+--- a/chrome/browser/ui/android/tab_model/tab_model.h
++++ b/chrome/browser/ui/android/tab_model/tab_model.h
+@@ -113,6 +113,7 @@ class TabModel {
+ 
+   virtual int GetTabCount() const = 0;
+   virtual int GetActiveIndex() const = 0;
++  virtual int GetLastNonExtensionActiveIndex() const = 0;
+   virtual content::WebContents* GetActiveWebContents() const;
+   virtual content::WebContents* GetWebContentsAt(int index) const = 0;
+   // This will return NULL if the tab has not yet been initialized.
+diff --git a/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.cc b/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.cc
+index 7c8d15e4cf81..2ca3b529b595 100644
+--- a/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.cc
++++ b/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.cc
+@@ -87,6 +87,11 @@ int TabModelJniBridge::GetActiveIndex() const {
+   return Java_TabModelJniBridge_index(env, java_object_.get(env));
+ }
+ 
++int TabModelJniBridge::GetLastNonExtensionActiveIndex() const {
++  JNIEnv* env = AttachCurrentThread();
++  return Java_TabModelJniBridge_getLastNonExtensionActiveIndex(env, java_object_.get(env));
++}
++
+ void TabModelJniBridge::CreateTab(TabAndroid* parent,
+                                   WebContents* web_contents) {
+   JNIEnv* env = AttachCurrentThread();
+diff --git a/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.h b/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.h
+index d8b0980da0a1..01547d77c730 100644
+--- a/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.h
++++ b/chrome/browser/ui/android/tab_model/tab_model_jni_bridge.h
+@@ -45,6 +45,7 @@ class TabModelJniBridge : public TabModel {
+   // TabModel::
+   int GetTabCount() const override;
+   int GetActiveIndex() const override;
++  int GetLastNonExtensionActiveIndex() const override;
+   content::WebContents* GetWebContentsAt(int index) const override;
+   TabAndroid* GetTabAt(int index) const override;
+ 
 diff --git a/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc b/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
 index ed43c8eff770..48c291866e75 100644
 --- a/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
@@ -8274,6 +10817,26 @@ index ba7dfe118da1..ee86339695a5 100644
  }
  
  }  // namespace
+diff --git a/chrome/browser/ui/extensions/icon_with_badge_image_source.h b/chrome/browser/ui/extensions/icon_with_badge_image_source.h
+index e82f79440e4b..d421c176597b 100644
+--- a/chrome/browser/ui/extensions/icon_with_badge_image_source.h
++++ b/chrome/browser/ui/extensions/icon_with_badge_image_source.h
+@@ -56,10 +56,15 @@ class IconWithBadgeImageSource : public gfx::CanvasImageSource {
+     return paint_blocked_actions_decoration_;
+   }
+ 
++#if 0
+  private:
++#endif
+   // gfx::CanvasImageSource:
+   void Draw(gfx::Canvas* canvas) override;
+ 
++#if 1
++ private:
++#endif
+   // Paints |badge_|, if any, on |canvas|.
+   void PaintBadge(gfx::Canvas* canvas);
+ 
 diff --git a/chrome/browser/ui/fast_unload_controller.cc b/chrome/browser/ui/fast_unload_controller.cc
 new file mode 100644
 index 000000000000..fe6f07d69351
